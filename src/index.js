@@ -1,5 +1,3 @@
-const rawAudioWorklet = require("bindings")("audioworklet");
-
 const RtAudioApi = {
 	UNSPECIFIED: 0,
 	LINUX_ALSA: 1,
@@ -31,9 +29,20 @@ const RtAudioStreamFlags = {
 	RTAUDIO_JACK_DONT_CONNECT: 0x20
 };
 
-exports = module.exports = {
-	...rawAudioWorklet,
-	RtAudioApi,
-	RtAudioFormat,
-	RtAudioStreamFlags
-};
+if (process.browser) {
+	exports = module.exports = {
+		RtAudioApi,
+		RtAudioFormat,
+		RtAudioStreamFlags
+	};
+} else {
+	const rawAudioWorklet = require("bindings")("audioworklet");
+
+	exports = module.exports = {
+		...rawAudioWorklet,
+		RtAudioApi,
+		RtAudioFormat,
+		RtAudioStreamFlags
+	};
+}
+
