@@ -1,0 +1,39 @@
+{
+	"name": "audioworklet",
+	"version": "1.5.2",
+	"description": "Stream audio generated in realtime by a function to the speaker",
+	"main": "src/index.js",
+	"types": "src/index.d.ts",
+	"scripts": {
+		"rebuild": "cmake-js compile",
+		"install": "prebuild-install || npm run rebuild",
+		"deploy": "np",
+		"build-binaries": "npm run build-binaries-node && npm run build-binaries-electron",
+		"build-binaries-node": "run-script-os",
+		"build-binaries-node:win32": "prebuild --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" -t 8.16.0 -t 10.16.0 -t 11.8.0 -t 12.0.0 -t 13.0.0 --verbose -u %GITHUB_TOKEN%",
+		"build-binaries-node:darwin:linux": "prebuild --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" -t 8.16.0 -t 10.16.0 -t 11.8.0 -t 12.0.0 -t 13.0.0 --verbose -u $GITHUB_TOKEN",
+		"build-binaries-electron": "run-script-os",
+		"build-binaries-electron:win32": "prebuild --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" -r electron -t 5.0.0 -t 6.0.0 -t 7.0.0 --verbose -u %GITHUB_TOKEN%",
+		"build-binaries-electron:darwin:linux": "prebuild --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" -r electron -t 5.0.0 -t 6.0.0 -t 7.0.0 --verbose -u $GITHUB_TOKEN"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/geekuillaume/node-audioworklet.git"
+	},
+	"author": "Guillaume Besson",
+	"license": "MIT",
+	"homepage": "https://github.com/geekuillaume/node-audioworklet#readme",
+	"dependencies": {
+		"bindings": "^1.5.0",
+		"cmake-js": "^6.0.0",
+		"node-addon-api": "^2.0.0",
+		"prebuild-install": "^5.3.3"
+	},
+	"devDependencies": {
+		"@types/node": "^12.12.17",
+		"np": "^5.2.1",
+		"prebuild": "^9.1.1",
+		"run-script-os": "^1.0.7",
+		"simple-git": "^1.129.0"
+	}
+}
