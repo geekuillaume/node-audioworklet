@@ -8,7 +8,13 @@ const {RtAudio} = require('../');
 const scriptPath = workerData.scriptPath;
 const rtAudioPtr = workerData.rtAudioPtr;
 
-const WorkerClass = require(scriptPath);
+const workerModule = require(scriptPath);
+let WorkerClass;
+if (workerModule.default) {
+  WorkerClass = workerModule.default;
+} else {
+  WorkerClass = workerModule;
+}
 
 const worker = new WorkerClass();
 RtAudio._setProcessFunctionFromExternal(rtAudioPtr, worker.process.bind(worker));
