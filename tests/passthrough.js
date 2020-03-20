@@ -29,7 +29,8 @@ rtaudio.start();
 
 setTimeout(() => {
   console.log('Stopping stream');
-  streamStatus = false;
+	streamStatus = false;
+  process.exit(0);
 }, 2000);
 
 

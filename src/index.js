@@ -36,13 +36,16 @@ if (process.browser) {
 		RtAudioStreamFlags
 	};
 } else {
-	const rawAudioWorklet = require("bindings")("audioworklet");
+	const {RtAudio} = require("bindings")("audioworklet");
+	const {attachProcessFunctionFromWorker, AudioWorkletProcessor} = require('./worker');
+
+	RtAudio.prototype.attachProcessFunctionFromWorker = attachProcessFunctionFromWorker;
 
 	exports = module.exports = {
-		...rawAudioWorklet,
+		RtAudio,
+		AudioWorkletProcessor,
 		RtAudioApi,
 		RtAudioFormat,
 		RtAudioStreamFlags
 	};
 }
-

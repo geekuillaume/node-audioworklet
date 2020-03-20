@@ -1,5 +1,7 @@
 /// <reference types="node" />
 
+import { Worker } from 'worker_threads';
+
 /** Audio API specifier arguments. */
 declare const enum RtAudioApi {
 	/** Search for a working compiled API. */
@@ -149,7 +151,7 @@ export declare class RtAudio {
 		sampleRate: number,
 		frameSize: number,
 		streamName: string,
-		processFrameCallback: ((inputData: Buffer[], outputData: Buffer[]) => void),
+		processFrameCallback?: ((inputData: Buffer[], outputData: Buffer[]) => void),
 		flags?: RtAudioStreamFlags
 	): void;
 
@@ -207,4 +209,19 @@ export declare class RtAudio {
 	 * Returns the index of the default output device.
 	 */
 	getDefaultOutputDevice(): number;
+
+	setProcessFunction(process: (inputData: Buffer[], outputData: Buffer[]) => boolean): void;
+
+	/**
+	 * Start the module specified by scriptPath in a new worker thread and use it as the process function
+	 * The module should export a class extending AudioWorkletProcessor with the process method implemented
+	 */
+	attachProcessFunctionFromWorker(scriptPath: string): Worker;
+}
+
+export declare abstract class AudioWorkletProcessor {
+	constructor();
+
+	port: MessagePort;
+	abstract process(inputData: Buffer[], outputData: Buffer[]): boolean;
 }

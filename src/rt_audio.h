@@ -34,6 +34,9 @@ public:
 	friend int rt_callback(void *outputBuffer, void *inputBuffer, unsigned int nFrames,
 						   double streamTime, RtAudioStreamStatus status, void *userData);
 
+	Napi::Value _getExternal(const Napi::CallbackInfo& info);
+	static void _setProcessFunctionFromExternal(const Napi::CallbackInfo& info);
+
 private:
 	inline static Napi::FunctionReference constructor;
 

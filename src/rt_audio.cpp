@@ -16,8 +16,13 @@ int rt_callback(void *outputBuffer, void *inputBuffer, unsigned int nFrames, dou
 	{
 		return 0;
 	}
+	if (wrap->_processFramefn == nullptr) {
+		return 0;
+	}
 
 	wrap->_processfnMutex.lock();
+
+	memset(outputBuffer, 0, bufferSize);
 
 	auto processStatus = wrap->_processFramefn.NonBlockingCall([outputBuffer, inputBuffer, bufferSize, &processPromise](Napi::Env env, Napi::Function callback) {
 		Napi::Array inputs = Napi::Array::New(env);
@@ -81,6 +86,8 @@ Napi::Object RtAudioWrap::Init(Napi::Env env, Napi::Object exports)
 					 InstanceMethod("getDefaultInputDevice", &RtAudioWrap::getDefaultInputDevice),
 					 InstanceMethod("getDefaultOutputDevice", &RtAudioWrap::getDefaultOutputDevice),
 					 InstanceMethod("setProcessFunction", &RtAudioWrap::setProcessFunction),
+					 InstanceMethod("_getExternal", &RtAudioWrap::_getExternal),
+					 StaticMethod("_setProcessFunctionFromExternal", &RtAudioWrap::_setProcessFunctionFromExternal),
 					});
 
 	// Set the class's ctor function as a persistent object to keep it in memory
@@ -179,14 +186,14 @@ void RtAudioWrap::openStream(const Napi::CallbackInfo &info)
 	{
 		throw Napi::Error::New(info.Env(), "24-bit signed integer is not available!");
 	}
-	if (processFrameCallback.IsEmpty()) {
-		throw Napi::Error::New(info.Env(), "Process function should be given as the 7th argument");
-	}
+
+	_processfnMutex.lock();
 
 	// If there is already a frame output threadsafe-function, release it
 	if (_processFramefn != nullptr)
 	{
 		_processFramefn.Release();
+		_processFramefn = nullptr;
 	}
 
 	// Save frame size
@@ -225,9 +232,9 @@ void RtAudioWrap::openStream(const Napi::CallbackInfo &info)
 		throw Napi::Error::New(info.Env(), ex.what());
 	}
 
-	_processfnMutex.lock();
-
-	_processFramefn = Napi::ThreadSafeFunction::New(info.Env(), processFrameCallback, "processFrameCallback", 0, 1, [this](Napi::Env) {});
+	if (!processFrameCallback.IsEmpty()) {
+		_processFramefn = Napi::ThreadSafeFunction::New(info.Env(), processFrameCallback, "processFrameCallback", 0, 1, [this](Napi::Env) {});
+	}
 
 	_processfnMutex.unlock();
 }
@@ -330,7 +337,7 @@ unsigned int RtAudioWrap::getSampleSizeForFormat(RtAudioFormat format)
 void RtAudioWrap::setProcessFunction(const Napi::CallbackInfo& info)
 {
 	if (info[0].IsEmpty() || !info[0].IsFunction()) {
-		Napi::Error::New(info.Env(), "First argument should be the process function");
+		throw Napi::Error::New(info.Env(), "First argument should be the process function");
 	}
 
 	_processfnMutex.lock();
@@ -338,4 +345,30 @@ void RtAudioWrap::setProcessFunction(const Napi::CallbackInfo& info)
 	_processFramefn = Napi::ThreadSafeFunction::New(info.Env(), info[0].As<Napi::Function>(), "processFrameCallback", 0, 1, [this](Napi::Env) {});
 
 	_processfnMutex.unlock();
+}
+
+Napi::Value RtAudioWrap::_getExternal(const Napi::CallbackInfo& info)
+{
+	// we cannot pass an external between multiple nodejs thread so we use an array buffer to pass the pointer to thr RtAudioWrap instance
+	// this is a big hack but I haven't found any other way of doing that
+	// if thread are being created / deleted it could also lead to a segfault so be careful to call _setProcessFunctionFromExternal directly after calling _getExternal
+	auto wrappedPointer = Napi::ArrayBuffer::New(info.Env(), sizeof(this));
+	RtAudioWrap** dataAddr = reinterpret_cast<RtAudioWrap **>(wrappedPointer.Data());
+	*dataAddr = this;
+	return wrappedPointer;
+}
+
+void RtAudioWrap::_setProcessFunctionFromExternal(const Napi::CallbackInfo& info)
+{
+	if (info.Length() != 2 || !info[0].IsArrayBuffer() || !info[1].IsFunction()) {
+		throw Napi::Error::New(info.Env(), "Two arguments should be passed: External Rtaudio instance and process function");
+	}
+
+	RtAudioWrap *wrap = *reinterpret_cast<RtAudioWrap **>(info[0].As<Napi::ArrayBuffer>().Data());
+
+	wrap->_processfnMutex.lock();
+
+	wrap->_processFramefn = Napi::ThreadSafeFunction::New(info.Env(), info[1].As<Napi::Function>(), "processFrameCallback", 0, 1);
+
+	wrap->_processfnMutex.unlock();
 }
