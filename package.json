@@ -6,7 +6,7 @@
 	"types": "src/index.d.ts",
 	"scripts": {
 		"build": "cmake-js compile",
-		"install": "prebuild-install || npm run rebuild",
+		"install": "prebuild-install || npm run build",
 		"deploy": "np --no-tests",
 		"build-binaries": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
 		"build-binaries-and-upload": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN"
