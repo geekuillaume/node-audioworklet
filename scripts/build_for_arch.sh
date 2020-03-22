@@ -14,7 +14,7 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 docker build ../ --file ./Dockerfile_crossarch --tag crossbuild
 
 docker run --rm --workdir /workspace \
-  -v `../`:/workspace \
+  -v `realpath ../`:/workspace \
   -e GITHUB_TOKEN=$GITHUB_TOKEN \
   crossbuild bash -c "yarn && \
    yarn run build-and-upload"
