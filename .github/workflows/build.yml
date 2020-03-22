@@ -45,15 +45,5 @@ jobs:
     - name: Build for armv7
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: uraimo/run-on-arch-action@v1.0.5
-      with:
-        architecture: armv7
-        distribution: ubuntu18.04
-        additionalArgs: "-e GITHUB_TOKEN"
-        run: |
-          mkdir -p $HOME
-          curl -sL https://deb.nodesource.com/setup_13.x | bash -
-          apt-get update && apt-get install -y nodejs libasound2-dev libpulse-dev npm
-          npm install
-          npm run build-and-upload
+      run: ./scripts/build_for_arch.sh
 
