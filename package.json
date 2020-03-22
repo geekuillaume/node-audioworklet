@@ -9,7 +9,9 @@
 		"install": "prebuild-install || npm run build",
 		"deploy": "np --no-tests",
 		"build-binaries": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
-		"build-binaries-and-upload": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN"
+		"build-and-upload": "run-script-os",
+		"build-and-upload:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN",
+		"build-and-upload:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%"
 	},
 	"repository": {
 		"type": "git",

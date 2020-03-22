@@ -31,10 +31,9 @@ jobs:
         run: yarn
 
       - name: Build
-        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn build-binaries-and-upload
+        run: yarn build-and-upload
 
   # prebuild-lib-crosscompile:
   #   runs-on: ubuntu-latest
