@@ -51,7 +51,8 @@ jobs:
         distribution: ubuntu18.04
         additionalArgs: "-e GITHUB_TOKEN"
         run: |
-          sudo apt-get update && sudo apt-get install -y libasound2-dev libpulse-dev
-          yarn
-          yarn build-and-upload
+          curl -sL https://deb.nodesource.com/setup_13.x | bash -
+          apt-get update && sudo apt-get install -y nodejs libasound2-dev libpulse-dev
+          npm install
+          npm run build-and-upload
 
