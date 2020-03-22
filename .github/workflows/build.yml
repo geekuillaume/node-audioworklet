@@ -46,12 +46,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       uses: uraimo/run-on-arch-action@v1.0.5
-        with:
-          architecture: armv7
-          distribution: ubuntu18.04
-          additionalArgs: "-e GITHUB_TOKEN"
-          run: |
-            sudo apt-get update && sudo apt-get install -y libasound2-dev libpulse-dev
-            yarn
-            yarn build-and-upload
+      with:
+        architecture: armv7
+        distribution: ubuntu18.04
+        additionalArgs: "-e GITHUB_TOKEN"
+        run: |
+          sudo apt-get update && sudo apt-get install -y libasound2-dev libpulse-dev
+          yarn
+          yarn build-and-upload
 
