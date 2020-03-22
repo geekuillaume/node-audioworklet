@@ -1,0 +1,48 @@
+name: Build/release
+
+on: push
+
+jobs:
+  prebuild-lib:
+    name: Prebuild lib
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+
+      - name: Install Alsa lib
+        if: "runner.os == 'Linux'"
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Install deps
+        run: yarn
+
+      - name: Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn build-binaries-and-upload
+
+  # prebuild-lib-crosscompile:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Check out Git repository
+  #     uses: actions/checkout@v1
+
+  #   - name: Build for raspberrypi
+  #     shell: bash
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     run: ./scripts/compile_for_raspberrypi.sh
