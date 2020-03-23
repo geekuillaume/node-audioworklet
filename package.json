@@ -1,6 +1,6 @@
 {
 	"name": "audioworklet",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"description": "Stream audio generated in realtime by a function to the speaker",
 	"main": "src/index.js",
 	"types": "src/index.d.ts",
@@ -39,8 +39,8 @@
 		]
 	},
 	"keywords": [
-    "audio",
-    "pcm",
+		"audio",
+		"pcm",
 		"speex",
 		"rtaudio",
 		"speaker",
@@ -57,5 +57,5 @@
 		"output",
 		"sound",
 		"music"
-  ]
+	]
 }
