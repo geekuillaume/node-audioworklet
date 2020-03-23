@@ -37,5 +37,25 @@
 		"napi_versions": [
 			4
 		]
-	}
+	},
+	"keywords": [
+    "audio",
+    "pcm",
+		"speex",
+		"rtaudio",
+		"speaker",
+		"playback",
+		"recording",
+		"jack",
+		"pulseaudio",
+		"oss",
+		"coreaudio",
+		"asio",
+		"wasapi",
+		"record",
+		"input",
+		"output",
+		"sound",
+		"music"
+  ]
 }
