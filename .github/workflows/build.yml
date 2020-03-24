@@ -47,5 +47,5 @@ jobs:
       run: git submodule update --init --recursive
 
     - name: Build for armv7
-      run: ./scripts/build_for_arch.sh
+      run: ./scripts/build_for_arch.sh --no-upload
 

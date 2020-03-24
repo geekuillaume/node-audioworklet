@@ -9,10 +9,11 @@
 		"install": "prebuild-install --target 4 -r napi || npm run build",
 		"deploy": "np --no-tests",
 		"build-binaries": "npm run patch-vendors && prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
-		"build-and-upload": "npm run patch-vendors && npm run run-script-os",
+		"build-and-upload": "npm run patch-vendors && npm run build-and-upload-script-os",
 		"patch-vendors": "cd vendor/libsoundio && git apply ../*.patch || true",
-		"build-and-upload:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN",
-		"build-and-upload:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%"
+		"build-and-upload-script-os":" run-script-os",
+		"build-and-upload-script-os:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN",
+		"build-and-upload-script-os:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%"
 	},
 	"repository": {
 		"type": "git",
