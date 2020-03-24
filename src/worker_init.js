@@ -3,7 +3,7 @@
 const {
   workerData,
 } = require('worker_threads');
-const {RtAudio} = require('../');
+const {Soundio} = require('../');
 
 const scriptPath = workerData.scriptPath;
 const rtAudioPtr = workerData.rtAudioPtr;
@@ -17,7 +17,7 @@ if (workerModule.default) {
 }
 
 const worker = new WorkerClass();
-RtAudio._setProcessFunctionFromExternal(rtAudioPtr, worker.process.bind(worker));
+Soundio._setProcessFunctionFromExternal(rtAudioPtr, worker.process.bind(worker));
 
 
 

@@ -1,4 +1,4 @@
-const { Soundio } = require('../');
+const { Soundio } = require('../src');
 const soundio = new Soundio();
 
 let streamStatus = true;
@@ -15,6 +15,7 @@ const processFrame = (outputBuffer) => {
     channels[1][sample] = sinSample;
     currentSample += 1;
   }
+
   return streamStatus;
 }
 
@@ -23,17 +24,19 @@ soundio.openOutputStream({
   format: Soundio.SoundIoFormatFloat32LE,
   sampleRate: 48000,
   name: "test test",
+  process: processFrame,
 });
 console.log('Starting stream');
 soundio.startOutputStream();
 
-setTimeout(() => {
-  console.log('Setting process function');
-  soundio.setProcessFunction(processFrame);
-}, 500);
+setInterval(() => {
+  console.log(`Latency: ${soundio.getStreamLatency()}`);
+}, 300);
 
 setTimeout(() => {
   console.log('Stopping stream');
   streamStatus = false;
-  process.exit(0);
 }, 2000);
+setTimeout(() => {
+  process.exit(0);
+}, 3000);

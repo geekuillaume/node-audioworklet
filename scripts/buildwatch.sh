@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -eo pipefail
+# set -eo pipefail
 
-npm run rebuild
+npm run build
 
 while inotifywait -r -e modify,create,delete,move ./src; do
     wait 1
-    npm run rebuild
+    npm run build
 done

@@ -1,9 +1,17 @@
 const path = require('path');
-const {RtAudio, RtAudioFormat} = require('../');
+const { Soundio } = require('../');
+const soundio = new Soundio();
 
-const rtaudio = new RtAudio();
+soundio.openOutputStream({
+  format: Soundio.SoundIoFormatS16LE,
+  sampleRate: 48000,
+  name: "test test",
+});
 
-rtaudio.openStream({ nChannels: 2 }, null, RtAudioFormat.RTAUDIO_SINT16, 48000, 480, '');
+soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
+soundio.startOutputStream();
 
-rtaudio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
-rtaudio.start();
+setTimeout(() => {
+  console.log('exiting');
+  process.exit(0);
+}, 1000);

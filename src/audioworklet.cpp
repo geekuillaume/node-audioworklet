@@ -1,10 +1,10 @@
 #include <napi.h>
 
-#include "rt_audio.h"
+#include "soundio.h"
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
-	RtAudioWrap::Init(env, exports);
+	SoundioWrap::Init(env, exports);
 
 	return exports;
 }

@@ -13,12 +13,15 @@ class WhiteNoiseProcessorWithMessage extends AudioWorkletProcessor {
     this.mute = message.data.mute;
   }
 
-  process(inputData, outputData) {
+  process(outputBuffer) {
     if (this.mute) {
       return true;
     }
-    for (let i = 0; i < outputData[0].length; i++) {
-      outputData[0][i] = Math.floor(Math.random() * 16000);
+    for (let channel = 0; channel < outputBuffer.length; channel++) {
+      const channelBuffer = new Int16Array(outputBuffer[channel].buffer);
+      for (let sample = 0; sample < channelBuffer.length; sample++) {
+        channelBuffer[sample] = Math.floor(((Math.random() * 2) - 1) * (1<<15));
+      }
     }
 
     return true;

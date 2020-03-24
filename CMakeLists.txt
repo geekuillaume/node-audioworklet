@@ -30,15 +30,14 @@ IF (APPLE)
     set(CMAKE_INSTALL_RPATH "@loader_path")
 ENDIF()
 
-# Compile RtAudio
-# Enable ASIO and DirectSound support on windows
-IF (WIN32)
-    set(RTAUDIO_API_ASIO ON CACHE BOOL "Build ASIO API")
-    set(RTAUDIO_API_DS ON CACHE BOOL "Build DirectSound API")
-ENDIF ()
-set(RTAUDIO_BUILD_TESTING OFF)
-add_subdirectory(vendor/rtaudio rtaudio)
-include_directories(vendor/rtaudio)
+# # Compile RtAudio
+# # Enable ASIO and DirectSound support on windows
+# IF (WIN32)
+#     set(ENABLE_WASAPI ON CACHE BOOL "Build WASAPI")
+# ENDIF ()
+
+add_subdirectory(vendor/libsoundio soundio)
+include_directories(vendor/libsoundio)
 
 # Set C++17 standard
 set (CMAKE_CXX_STANDARD 17)
@@ -68,4 +67,4 @@ string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${NODE_ADDON_API_DIR})
 
 # Compile the library
-target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBS} ${CMAKE_JS_LIB} rtaudio)
+target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBS} ${CMAKE_JS_LIB} libsoundio_shared)

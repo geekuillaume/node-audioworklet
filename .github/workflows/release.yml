@@ -1,6 +1,8 @@
-name: Build
+name: Build/release
 
-on: push
+on:
+  release:
+    types: published
 
 jobs:
   prebuild-lib:
@@ -34,7 +36,9 @@ jobs:
         run: yarn
 
       - name: Build
-        run: yarn build-binaries
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn build-and-upload
 
   prebuild-lib-armv7:
     name: Prebuild lib ARMv7
@@ -44,5 +48,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Build for armv7
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./scripts/build_for_arch.sh
 

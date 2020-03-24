@@ -1,12 +1,15 @@
 const path = require('path');
-const {RtAudio, RtAudioFormat} = require('../');
+const { Soundio } = require('../');
+const soundio = new Soundio();
 
-const rtaudio = new RtAudio();
+soundio.openOutputStream({
+  format: Soundio.SoundIoFormatS16LE,
+  sampleRate: 48000,
+  name: "test test",
+});
 
-rtaudio.openStream({ nChannels: 2 }, null, RtAudioFormat.RTAUDIO_SINT16, 48000, 480, '');
-
-const worklet = rtaudio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
-rtaudio.start();
+const worklet = soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
+soundio.startOutputStream();
 
 setTimeout(() => {
   console.log('Muting worklet');
@@ -15,7 +18,7 @@ setTimeout(() => {
   });
 }, 1000);
 
-
 setTimeout(() => {
+  console.log('exiting');
   process.exit(0);
 }, 2000);

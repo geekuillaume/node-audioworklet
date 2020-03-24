@@ -5,9 +5,12 @@ class WhiteNoiseProcessor extends AudioWorkletProcessor {
     super();
   }
 
-  process(inputData, outputData) {
-    for (let i = 0; i < outputData[0].length; i++) {
-      outputData[0][i] = Math.floor(Math.random() * 16000);
+  process(outputBuffer) {
+    for (let channel = 0; channel < outputBuffer.length; channel++) {
+      const channelBuffer = new Int16Array(outputBuffer[channel].buffer);
+      for (let sample = 0; sample < channelBuffer.length; sample++) {
+        channelBuffer[sample] = Math.floor(((Math.random() * 2) - 1) * (1<<15));
+      }
     }
 
     return true;

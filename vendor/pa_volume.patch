@@ -1,0 +1,126 @@
+diff --git a/src/alsa.c b/src/alsa.c
+index edbf51b..058f339 100644
+--- a/src/alsa.c
++++ b/src/alsa.c
+@@ -1568,6 +1568,12 @@ static int outstream_get_latency_alsa(struct SoundIoPrivate *si, struct SoundIoO
+     return 0;
+ }
+ 
++static int outstream_set_volume_alsa(struct SoundIoPrivate *si, struct SoundIoOutStreamPrivate *os, float volume) {
++    struct SoundIoOutStream *outstream = &os->pub;
++    outstream->volume = volume;
++    return 0;
++}
++
+ static void instream_destroy_alsa(struct SoundIoPrivate *si, struct SoundIoInStreamPrivate *is) {
+     struct SoundIoInStreamAlsa *isa = &is->backend_data.alsa;
+ 
+@@ -1945,6 +1951,7 @@ int soundio_alsa_init(struct SoundIoPrivate *si) {
+     si->outstream_clear_buffer = outstream_clear_buffer_alsa;
+     si->outstream_pause = outstream_pause_alsa;
+     si->outstream_get_latency = outstream_get_latency_alsa;
++    si->outstream_set_volume = outstream_set_volume_alsa;
+ 
+     si->instream_open = instream_open_alsa;
+     si->instream_destroy = instream_destroy_alsa;
+diff --git a/src/dummy.c b/src/dummy.c
+index f1a3828..490d31d 100644
+--- a/src/dummy.c
++++ b/src/dummy.c
+@@ -271,6 +271,12 @@ static int outstream_get_latency_dummy(struct SoundIoPrivate *si, struct SoundIo
+     return 0;
+ }
+ 
++static int outstream_set_volume_dummy(struct SoundIoPrivate *si, struct SoundIoOutStreamPrivate *os, float volume) {
++    struct SoundIoOutStream *outstream = &os->pub;
++    outstream->volume = volume;
++    return 0;
++}
++
+ static void instream_destroy_dummy(struct SoundIoPrivate *si, struct SoundIoInStreamPrivate *is) {
+     struct SoundIoInStreamDummy *isd = &is->backend_data.dummy;
+ 
+@@ -557,6 +563,7 @@ int soundio_dummy_init(struct SoundIoPrivate *si) {
+     si->outstream_clear_buffer = outstream_clear_buffer_dummy;
+     si->outstream_pause = outstream_pause_dummy;
+     si->outstream_get_latency = outstream_get_latency_dummy;
++    si->outstream_set_volume = outstream_set_volume_dummy;
+ 
+     si->instream_open = instream_open_dummy;
+     si->instream_destroy = instream_destroy_dummy;
+diff --git a/src/jack.c b/src/jack.c
+index c56bf15..1562bd8 100644
+--- a/src/jack.c
++++ b/src/jack.c
+@@ -587,6 +587,11 @@ static int outstream_get_latency_jack(struct SoundIoPrivate *si, struct SoundIoO
+     return 0;
+ }
+ 
++static int outstream_set_volume_jack(struct SoundIoPrivate *si, struct SoundIoOutStreamPrivate *os, float volume) {
++    struct SoundIoOutStream *outstream = &os->pub;
++    outstream->volume = volume;
++    return 0;
++}
+ 
+ static void instream_destroy_jack(struct SoundIoPrivate *si, struct SoundIoInStreamPrivate *is) {
+     struct SoundIoInStreamJack *isj = &is->backend_data.jack;
+@@ -951,6 +956,7 @@ int soundio_jack_init(struct SoundIoPrivate *si) {
+     si->outstream_clear_buffer = outstream_clear_buffer_jack;
+     si->outstream_pause = outstream_pause_jack;
+     si->outstream_get_latency = outstream_get_latency_jack;
++    si->outstream_set_volume = outstream_set_volume_jack;
+ 
+     si->instream_open = instream_open_jack;
+     si->instream_destroy = instream_destroy_jack;
+diff --git a/src/pulseaudio.c b/src/pulseaudio.c
+index d594c3b..01d46d6 100644
+--- a/src/pulseaudio.c
++++ b/src/pulseaudio.c
+@@ -835,6 +835,39 @@ static int outstream_get_latency_pa(struct SoundIoPrivate *si, struct SoundIoOut
+     return 0;
+ }
+ 
++static int outstream_set_volume_pa(struct SoundIoPrivate *si, struct SoundIoOutStreamPrivate *os, float volume) {
++    struct SoundIoPulseAudio *sipa = &si->backend_data.pulseaudio;
++    struct SoundIoOutStreamPulseAudio *ospa = &os->backend_data.pulseaudio;
++    struct SoundIoOutStream *outstream = &os->pub;
++
++    pa_cvolume v;
++#ifdef PA_CHECK_VERSION
++    pa_cvolume_init(&v);
++#endif
++
++    int channels, ch;
++    double vol;
++    pa_operation *op;
++
++    channels = (unsigned)outstream->layout.channel_count;
++    v.channels = channels;
++    vol = PA_VOLUME_NORM * (volume > 1.0f ? 1.0f : volume);
++    for (ch = 0; ch < channels; ch++) {
++        v.values[ch] = vol;
++    }
++
++    op = pa_context_set_sink_input_volume(sipa->pulse_context,
++        pa_stream_get_index(ospa->stream),
++        &v, NULL, NULL);
++    if (!op) {
++        return SoundIoErrorStreaming;
++    } else {
++        pa_operation_unref(op);
++    }
++    outstream->volume = volume;
++    return 0;
++}
++
+ static void recording_stream_state_callback(pa_stream *stream, void *userdata) {
+     struct SoundIoInStreamPrivate *is = (struct SoundIoInStreamPrivate*)userdata;
+     struct SoundIoInStreamPulseAudio *ispa = &is->backend_data.pulseaudio;
+@@ -1135,6 +1168,7 @@ int soundio_pulseaudio_init(struct SoundIoPrivate *si) {
+     si->outstream_clear_buffer = outstream_clear_buffer_pa;
+     si->outstream_pause = outstream_pause_pa;
+     si->outstream_get_latency = outstream_get_latency_pa;
++    si->outstream_set_volume = outstream_set_volume_pa;
+ 
+     si->instream_open = instream_open_pa;
+     si->instream_destroy = instream_destroy_pa;
