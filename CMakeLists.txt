@@ -36,6 +36,11 @@ ENDIF()
 #     set(ENABLE_WASAPI ON CACHE BOOL "Build WASAPI")
 # ENDIF ()
 
+
+set(BUILD_TESTS OFF CACHE BOOL "test")
+set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "test")
+set(BUILD_STATIC_LIBS OFF CACHE BOOL "test")
+
 add_subdirectory(vendor/libsoundio soundio)
 include_directories(vendor/libsoundio)
 
