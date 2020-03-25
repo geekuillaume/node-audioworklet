@@ -1,116 +1,141 @@
 # Node Audioworklet
 
-This is a NodeJS lib based on the awesome [Audify](https://github.com/almogh52/audify) project to mimic the AudioWorklet interface of WebAudio. It uses [RtAudio](https://www.music.mcgill.ca/~gary/rtaudio/) to support a wide variety of OS and configuration (Linux (native ALSA, JACK, PulseAudio and OSS), Macintosh OS X (CoreAudio and JACK), and Windows (DirectSound, ASIO and WASAPI)). It can be used to output data to speaker or record from an audio input. It differs from Audify as this lib doesn't handle the output buffer but instead calls a function every frame which can read from the input buffer or write into the output buffer.
+Node Audioworklet is a NodeJS lib exposing a set of function to output audio on an audio card. It's close to the AudioWorklet interface of WebAudio. It uses [libsoundio](http://libsound.io/) to support a wide variety of OS and configuration: Linux (native ALSA, JACK, PulseAudio), Macintosh OS X (CoreAudio and JACK), and Windows (WASAPI). It only handle raw PCM frames that should be set into a Buffer for every frame. You can set the buffer size to precisely time the sound you are emitting.
 
 AudioWorklet also can use another file started in a [NodeJS Worker Thread](https://nodejs.org/api/worker_threads.html) as the process function to isolate the thread and better manage the memory to prevent stop-the-world Garbage Collection from stopping the thread and cause audio artifacts. You need Node v10 or higher to use this feature.
 
 ## Installation
+
 ```
-npm install audioworklet
+npm install --save audioworklet
 ```
 
-***Most regular installs will support prebuilds that are built with each release.***
+Or
 
-### Requirements for source build
-
-* Node or Electron versions that support N-API 4 and up ([N-API Node Version Matrix](https://nodejs.org/docs/latest/api/n-api.html#n_api_n_api_version_matrix))
-* [CMake](http://www.cmake.org/download/)
-* A proper C/C++ compiler toolchain of the given platform
-    * **Windows**:
-        * [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) or a recent version of Visual C++ will do ([the free Community](https://www.visualstudio.com/products/visual-studio-community-vs) version works well)
-    * **Unix/Posix**:
-        * Clang or GCC
-        * Ninja or Make (Ninja will be picked if both present)
+```
+yarn add audioworklet
+```
 
 ## Example
 
-### Record audio and play it back realtime
+### List devices
+
 ```javascript
-const { RtAudio, RtAudioFormat } = require("audioworklet");
+const { Soundio } = require('../');
 
-// Init RtAudio instance using default sound API
-const rtAudio = new RtAudio(/* Insert here specific API if needed */);
+const soundio = new Soundio();
+console.log(soundio.getDevices())
 
-// Open the input/output stream
-rtAudio.openStream(
-	{ deviceId: rtAudio.getDefaultOutputDevice(), // Output device id (Get all devices using `getDevices`)
-	  nChannels: 1, // Number of channels
-	  firstChannel: 0 // First channel index on device (default = 0).
-	},
-	{ deviceId: rtAudio.getDefaultInputDevice(), // Input device id (Get all devices using `getDevices`)
-	  nChannels: 1, // Number of channels
-	  firstChannel: 0 // First channel index on device (default = 0).
-	},
-	RtAudioFormat.RTAUDIO_SINT16, // PCM Format - Signed 16-bit integer
-	48000, // Sampling rate is 48kHz
-	1920, // Frame size is 1920 (40ms)
-	"MyStream", // The name of the stream (used for JACK Api)
-  (inputData, outputData) => {
-    inputData[0].copy(outputData[0])
-    return true; // returning false will stop the stream
-  }
-);
-
-// Start the stream
-rtAudio.start();
+console.log('default output:', soundio.getDefaultOutputDeviceIndex());
+console.log('default input:', soundio.getDefaultInputDeviceIndex());
+console.log('API:', soundio.getApi());
 ```
 
-The `inputData` and `outputData` are two array of 0 or 1 Buffer depending on the configuration. For multi-channels configuration, the data is interleaved.
+Will output:
+
+```
+{
+  outputDevices: [
+    {
+      name: 'PCM2704 16-bit stereo audio DAC Digital Stereo (IEC958)',
+      id: 'alsa_output.usb-Audioengine_Audioengine_2_-00.iec958-stereo',
+      channels: 2
+    },
+    {
+      name: 'Built-in Audio Analog Stereo',
+      id: 'alsa_output.pci-0000_00_1f.3.analog-stereo',
+      channels: 2
+    }
+  ],
+  inputDevices: [
+    {
+      name: 'Monitor of PCM2704 16-bit stereo audio DAC Digital Stereo (IEC958)',
+      id: 'alsa_output.usb-Audioengine_Audioengine_2_-00.iec958-stereo.monitor',
+      channels: 2
+    },
+    {
+      name: 'Webcam C930e Analog Stereo',
+      id: 'alsa_input.usb-046d_Logitech_Webcam_C930e_1658212E-02.analog-stereo',
+      channels: 2
+    },
+    {
+      name: 'Monitor of Built-in Audio Analog Stereo',
+      id: 'alsa_output.pci-0000_00_1f.3.analog-stereo.monitor',
+      channels: 2
+    },
+    {
+      name: 'Built-in Audio Analog Stereo',
+      id: 'alsa_input.pci-0000_00_1f.3.analog-stereo',
+      channels: 2
+    }
+  ]
+}
+default output: 1
+default input: 3
+API: PulseAudio
+```
 
 ### Play white noise
 
 ```javascript
-const { RtAudio, RtAudioFormat } = require("audioworklet");
+const { Soundio } = require('../');
+const soundio = new Soundio();
 
-// Init RtAudio instance using default sound API
-const rtAudio = new RtAudio(/* Insert here specific API if needed */);
-
-// Open the input/output stream
-rtAudio.openStream(
-	{
-	  nChannels: 2, // Number of channels
-	},
-	null, // no input
-	RtAudioFormat.RTAUDIO_SINT16, // PCM Format - Signed 16-bit integer
-	48000, // Sampling rate is 48kHz
-	1920, // Frame size is 1920 (40ms)
-	"MyStream", // The name of the stream (used for JACK Api)
-  (inputData, outputData) => {
-		for (let i = 0; i < outputData[0].length; i++) {
-			outputData[0][i] = Math.floor(Math.random() * 16000);
-		}
-    return true; // returning false will stop the stream
+const processFrame = (outputChannels) => {
+  // outputChannels is an array of TypedArray, one per channel, in this example, SoundIoFormatFloat32LE is used so it will be an array of Float32Array
+  for (let sample = 0; sample < outputChannels[0].length; sample++) {
+    outputChannels[0][sample] = Math.random();
+    outputChannels[1][sample] = Math.random();
   }
+  // if the function returns false, the stream is paused after this sample
+  return true;
+}
+
+soundio.openOutputStream({
+  format: Soundio.SoundIoFormatFloat32LE, // can be 8,16,32 signed/unsigned int in Big or Little endian and also Float64
+  sampleRate: 48000, // in sample per seconds
+  name: "Test", // used by some audio backend to show more info about the stream
+  frameSize: 480, // size of the output buffer passed to the process function, low means responsive audio stream, high means less CPU usage
+  bufferDuration: 0.1, // in seconds, how long in the future to emit samples for, high means more delay but better CPU usage
+  process: processFrame,
+});
+soundio.startOutputStream();
 ```
 
 ### Use another file as AudioWorklet
 
 ```javascript
 const path = require('path');
-const {RtAudio, RtAudioFormat} = require('audioworklet');
+const { Soundio } = require('audioworklet');
+const soundio = new Soundio();
 
-const rtaudio = new RtAudio();
+soundio.openOutputStream();
 
-rtaudio.openStream({ nChannels: 2 }, null, RtAudioFormat.RTAUDIO_SINT16, 48000, 480, '');
+soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
+soundio.startOutputStream();
 
-rtaudio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
-rtaudio.start();
+setTimeout(() => {
+  console.log('exiting');
+  process.exit(0);
+}, 1000);
 ```
 
-And in `workers/whitenoise.js`:
+And in `./workers/whitenoise.js`:
 
 ```javascript
-const {AudioWorkletProcessor} = require('audioworklet');
+const {AudioWorkletProcessor} = require('../../');
 
 class WhiteNoiseProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
   }
 
-  process(inputData, outputData) {
-    for (let i = 0; i < outputData[0].length; i++) {
-      outputData[0][i] = Math.floor(Math.random() * 16000);
-    }
+  process(outputChannels) {
+    outputChannels.forEach((channel) => {
+      for (let sample = 0; sample < channel.length; sample++) {
+        channel[sample] = Math.random();
+      }
+    })
 
     return true;
   }
@@ -123,14 +148,13 @@ module.exports = WhiteNoiseProcessor;
 
 ```javascript
 const path = require('path');
-const {RtAudio, RtAudioFormat} = require('audioworklet');
+const { Soundio } = require('audioworklet');
+const soundio = new Soundio();
 
-const rtaudio = new RtAudio();
+soundio.openOutputStream();
 
-rtaudio.openStream({ nChannels: 2 }, null, RtAudioFormat.RTAUDIO_SINT16, 48000, 480, '');
-
-const worklet = rtaudio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
-rtaudio.start();
+const worklet = soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
+soundio.startOutputStream();
 
 setTimeout(() => {
   console.log('Muting worklet');
@@ -138,6 +162,11 @@ setTimeout(() => {
     mute: true,
   });
 }, 1000);
+
+setTimeout(() => {
+  console.log('exiting');
+  process.exit(0);
+}, 2000);
 ```
 
 And in `workers/messages.js`:
@@ -158,13 +187,15 @@ class WhiteNoiseProcessorWithMessage extends AudioWorkletProcessor {
     this.mute = message.data.mute;
   }
 
-  process(inputData, outputData) {
+  process(outputChannels) {
     if (this.mute) {
       return true;
     }
-    for (let i = 0; i < outputData[0].length; i++) {
-      outputData[0][i] = Math.floor(Math.random() * 16000);
-    }
+    outputChannels.forEach((channel) => {
+      for (let sample = 0; sample < channel.length; sample++) {
+        channel[sample] = Math.random();
+      }
+    })
 
     return true;
   }
@@ -175,6 +206,31 @@ module.exports = WhiteNoiseProcessorWithMessage;
 
 The `this.port` property is a `MessagePort` and also handle passing a second argument `transferList` to prevent a data copy of ArrayBuffers. Look at the [documentation](https://nodejs.org/api/worker_threads.html#worker_threads_port_postmessage_value_transferlist) for more information.
 
+## Development
+
+### Download libsoundio
+
+```
+git submodule update --init --recursive
+cd vendor/libsoundio
+```
+
+### Requirements for source build
+
+***Most regular installs will support prebuilds that are built with each release, this is required if you want to develop with.***
+
+* Node version that support N-API 4 and up ([N-API Node Version Matrix](https://nodejs.org/docs/latest/api/n-api.html#n_api_n_api_version_matrix))
+* [CMake](http://www.cmake.org/download/)
+* A proper C/C++ compiler toolchain of the given platform
+    * **Windows**:
+        * [Windows build tools](https://www.npmjs.com/package/windows-build-tools) NPM package
+    * **Unix/Posix**:
+        * Clang or GCC
+        * Ninja or Make (Ninja will be picked if both present)
+        * Alsa and/or Pulseaudio libs (on ubuntu, it can be installed with `apt-get install -y libasound2-dev libpulse-dev`)
+
 ## Legal
 
 This project is licensed under the MIT license.
+
+It is based on the [Audify](https://github.com/almogh52/audify) project from Almogh52 also released under MIT license.
