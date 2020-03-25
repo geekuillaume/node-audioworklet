@@ -134,7 +134,7 @@ export declare class Soundio {
 	isOutputStreamOpen(): boolean;
 
 	startOutputStream(): void;
-	setOutputPause(paused: bool): void;
+	setOutputPause(paused: boolean): void;
 
 	getApi(): string;
 
@@ -143,7 +143,7 @@ export declare class Soundio {
 	/**
 	 * Returns the list of available devices.
 	 */
-	getDevices(): Array<RtAudioDeviceInfo>;
+	getDevices(): Array<SoundioDeviceInfo>;
 
 	getDefaultInputDeviceIndex(): number;
 	getDefaultOutputDeviceIndex(): number;
