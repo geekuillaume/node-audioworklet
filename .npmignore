@@ -79,4 +79,10 @@ lerna-debug.log
 Thumbs.db
 
 .vscode
-scripts
+/scripts
+/tests
+CMakeFiles
+prebuilds
+.github
+/vendor/libsoundio/test
+/vendor/libsoundio/doc
