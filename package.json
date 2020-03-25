@@ -1,6 +1,6 @@
 {
 	"name": "audioworklet",
-	"version": "0.2.4",
+	"version": "1.0.0",
 	"description": "Stream audio generated in realtime by a function to the speaker",
 	"main": "src/index.js",
 	"types": "src/index.d.ts",
@@ -11,7 +11,7 @@
 		"build-binaries": "npm run patch-vendors && prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
 		"build-and-upload": "npm run patch-vendors && npm run build-and-upload-script-os",
 		"patch-vendors": "cd vendor/libsoundio && git apply ../*.patch || true",
-		"build-and-upload-script-os":" run-script-os",
+		"build-and-upload-script-os": " run-script-os",
 		"build-and-upload-script-os:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN",
 		"build-and-upload-script-os:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%"
 	},
