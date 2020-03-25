@@ -47,6 +47,9 @@ jobs:
     - name: Check out Git repository
       uses: actions/checkout@v1
 
+    - name: Init submodules
+      run: git submodule update --init --recursive
+
     - name: Build for armv7
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
