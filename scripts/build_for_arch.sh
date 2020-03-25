@@ -19,12 +19,12 @@ then
     -v `realpath ../`:/workspace \
     -e GITHUB_TOKEN=$GITHUB_TOKEN \
     crossbuild bash -c "yarn && \
-      yarn run build-binaries"
+      yarn run build-and-upload"
 else
   docker run --rm --workdir /workspace \
     -v `realpath ../`:/workspace \
     -e GITHUB_TOKEN=$GITHUB_TOKEN \
     crossbuild bash -c "yarn && \
-      yarn run build-and-upload"
+      yarn run build-binaries"
 fi
 
