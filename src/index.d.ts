@@ -72,10 +72,6 @@ declare const enum SoundioAudioFormat {
 	SoundIoFormatS16BE,
 	SoundIoFormatU16LE,
 	SoundIoFormatU16BE,
-	SoundIoFormatS24LE,
-	SoundIoFormatS24BE,
-	SoundIoFormatU24LE,
-	SoundIoFormatU24BE,
 	SoundIoFormatS32LE,
 	SoundIoFormatS32BE,
 	SoundIoFormatU32LE,
@@ -86,13 +82,23 @@ declare const enum SoundioAudioFormat {
 	SoundIoFormatFloat64BE,
 }
 
+export type TypedArray = Int8Array |
+  Uint8Array |
+  Int16Array |
+  Uint16Array |
+  Int32Array |
+  Uint32Array |
+  Uint8ClampedArray |
+  Float32Array |
+  Float64Array;
+
 interface OutputStreamParams {
 	format?: SoundioAudioFormat;
 	sampleRate?: number;
 	frameSize?: number;
 	name?: string;
 	deviceId?: number;
-	process?: ((outputChannels: Buffer[]) => boolean);
+	process?: ((outputChannels: TypedArray[]) => boolean);
 	bufferDuration?: number;
 }
 
@@ -123,7 +129,7 @@ export declare class Soundio {
 	 */
 	constructor(api?: SoundioApi);
 
-	openOutputStream(params: OutputStreamParams): void;
+	openOutputStream(params?: OutputStreamParams): void;
 	closeOutputStream(): void;
 	isOutputStreamOpen(): boolean;
 

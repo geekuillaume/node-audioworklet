@@ -2,11 +2,7 @@ const path = require('path');
 const { Soundio } = require('../');
 const soundio = new Soundio();
 
-soundio.openOutputStream({
-  format: Soundio.SoundIoFormatS16LE,
-  sampleRate: 48000,
-  name: "test test",
-});
+soundio.openOutputStream();
 
 soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
 soundio.startOutputStream();

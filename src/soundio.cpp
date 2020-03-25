@@ -9,10 +9,12 @@
 void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int frame_count_max)
 {
 	SoundioWrap *wrap = (SoundioWrap *)outstream->userdata;
+	SoundIoFormat format = outstream->format;
+
 	int frames_left = frame_count_max;
 	size_t jsChannelBufferSize = wrap->_outstreamFrameSize * outstream->bytes_per_sample;
 	std::vector<uint8_t *> jsBuffer = wrap->_outstreamJsBuffer;
-	std::promise<bool> processPromise;
+
 	struct SoundIoChannelArea *areas;
 	double outLatency;
 	int err;
@@ -21,7 +23,7 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 	// std::cout << frame_count_min << " -> " << frame_count_max << " - will write " << frames_left << '\n';
 	while (frames_left >= wrap->_outstreamFrameSize)
 	{
-		processPromise = std::promise<bool>();
+		std::promise<bool> processPromise;
 		std::future<bool> processFuture = processPromise.get_future();
 
 		for(void *channelBuffer : jsBuffer) {
@@ -40,15 +42,33 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 			break;
 
 		if (wrap->_processFramefn) {
-			auto processStatus = wrap->_processFramefn.NonBlockingCall([jsBuffer, jsChannelBufferSize, &processPromise](Napi::Env env, Napi::Function callback) {
+			auto processStatus = wrap->_processFramefn.NonBlockingCall([format, jsBuffer, jsChannelBufferSize, &processPromise](Napi::Env env, Napi::Function callback) {
+				size_t bytes_per_sample = soundio_get_bytes_per_sample(format);
 
 				Napi::Array outputs = Napi::Array::New(env);
 
 				outputs = Napi::Array::New(env, jsBuffer.size());
 				for (size_t channel = 0; channel < jsBuffer.size(); channel++)
 				{
-					const Napi::Buffer<int8_t> buffer = Napi::Buffer<int8_t>::New(env, reinterpret_cast<int8_t *>(jsBuffer[channel]), jsChannelBufferSize);
-					outputs[channel] = buffer;
+					Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, jsBuffer[channel], jsChannelBufferSize);
+
+					if (format == SoundIoFormatS8) {
+						outputs[channel] = Napi::TypedArrayOf<int8_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					} else if (format == SoundIoFormatU8) {
+						outputs[channel] = Napi::TypedArrayOf<uint8_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					} else if (format == SoundIoFormatS16LE || format == SoundIoFormatS16LE) {
+						outputs[channel] = Napi::TypedArrayOf<int16_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					} else if (format == SoundIoFormatU16LE || format == SoundIoFormatU16BE) {
+						outputs[channel] = Napi::TypedArrayOf<uint16_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					} else if (format == SoundIoFormatS32LE || format == SoundIoFormatS32BE) {
+						outputs[channel] = Napi::TypedArrayOf<int32_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					} else if (format == SoundIoFormatU32LE || format == SoundIoFormatU32BE) {
+						outputs[channel] = Napi::TypedArrayOf<uint32_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					} else if (format == SoundIoFormatFloat32LE || format == SoundIoFormatFloat32BE) {
+						outputs[channel] = Napi::TypedArrayOf<float>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					} else if (format == SoundIoFormatFloat64LE || format == SoundIoFormatFloat64BE) {
+						outputs[channel] = Napi::TypedArrayOf<double>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+					}
 				}
 
 				Napi::Value retValue = callback.Call({
@@ -129,10 +149,6 @@ Napi::Object SoundioWrap::Init(Napi::Env env, Napi::Object exports)
 			StaticValue("SoundIoFormatS16BE", Napi::Number::New(env, SoundIoFormatS16BE)),     ///< Signed 16 bit Big Endian
 			StaticValue("SoundIoFormatU16LE", Napi::Number::New(env, SoundIoFormatU16LE)),     ///< Unsigned 16 bit Little Endian
 			StaticValue("SoundIoFormatU16BE", Napi::Number::New(env, SoundIoFormatU16BE)),     ///< Unsigned 16 bit Big Endian
-			StaticValue("SoundIoFormatS24LE", Napi::Number::New(env, SoundIoFormatS24LE)),     ///< Signed 24 bit Little Endian using low three bytes in 32-bit word
-			StaticValue("SoundIoFormatS24BE", Napi::Number::New(env, SoundIoFormatS24BE)),     ///< Signed 24 bit Big Endian using low three bytes in 32-bit word
-			StaticValue("SoundIoFormatU24LE", Napi::Number::New(env, SoundIoFormatU24LE)),     ///< Unsigned 24 bit Little Endian using low three bytes in 32-bit word
-			StaticValue("SoundIoFormatU24BE", Napi::Number::New(env, SoundIoFormatU24BE)),     ///< Unsigned 24 bit Big Endian using low three bytes in 32-bit word
 			StaticValue("SoundIoFormatS32LE", Napi::Number::New(env, SoundIoFormatS32LE)),     ///< Signed 32 bit Little Endian
 			StaticValue("SoundIoFormatS32BE", Napi::Number::New(env, SoundIoFormatS32BE)),     ///< Signed 32 bit Big Endian
 			StaticValue("SoundIoFormatU32LE", Napi::Number::New(env, SoundIoFormatU32LE)),     ///< Unsigned 32 bit Little Endian
@@ -160,8 +176,6 @@ SoundioWrap::SoundioWrap(
 	_processFramefn(nullptr),
 	_outstreamFrameSize(480),
 	_configuredOutputBufferDuration(0.1)
-	// _frameSize(0),
-	// _inputChannels(0)
 {
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This()); // this is used to prevent the GC to collect this object while a stream is running
 	int err;
@@ -244,7 +258,7 @@ Napi::Value SoundioWrap::getDefaultOutputDeviceIndex(const Napi::CallbackInfo &i
 
 void SoundioWrap::openOutputStream(const Napi::CallbackInfo &info)
 {
-	Napi::Object opts = info[0].As<Napi::Object>();
+	Napi::Object opts = info[0].IsUndefined() ? Napi::Object::New(info.Env()) : info[0].As<Napi::Object>();
 
 	if (_outstream != nullptr) {
 		throw Napi::Error::New(info.Env(), "An outstream is already started");

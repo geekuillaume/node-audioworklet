@@ -2,11 +2,7 @@ const path = require('path');
 const { Soundio } = require('../');
 const soundio = new Soundio();
 
-soundio.openOutputStream({
-  format: Soundio.SoundIoFormatS16LE,
-  sampleRate: 48000,
-  name: "test test",
-});
+soundio.openOutputStream();
 
 const worklet = soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
 soundio.startOutputStream();
