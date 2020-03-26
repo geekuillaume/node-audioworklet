@@ -40,8 +40,8 @@ declare interface SoundioDeviceInfo {
 	/** Character string device identifier. */
 	name: string;
 
-	// /** Maximum output channels supported by device. */
-	// outputChannels: number;
+	/** Maximum output channels supported by device. */
+	channels: number;
 
 	// /** Maximum input channels supported by device. */
 	// inputChannels: number;
@@ -63,6 +63,11 @@ declare interface SoundioDeviceInfo {
 
 	// /** Bit mask of supported data formats. */
 	// nativeFormats: number;
+}
+
+declare interface SoundioDevicesResponse {
+	outputDevices: SoundioDeviceInfo[];
+	inputDevices: SoundioDeviceInfo[];
 }
 
 declare const enum SoundioAudioFormat {
@@ -143,7 +148,7 @@ export declare class Soundio {
 	/**
 	 * Returns the list of available devices.
 	 */
-	getDevices(): Array<SoundioDeviceInfo>;
+	getDevices(): SoundioDevicesResponse;
 
 	getDefaultInputDeviceIndex(): number;
 	getDefaultOutputDeviceIndex(): number;
@@ -163,5 +168,5 @@ export declare abstract class AudioWorkletProcessor {
 	constructor();
 
 	port: MessagePort;
-	abstract process(inputData: Buffer[], outputData: Buffer[]): boolean;
+	abstract process(outputChannels: TypedArray[]): boolean;
 }
