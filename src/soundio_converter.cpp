@@ -7,8 +7,33 @@ Napi::Value SoundioConverter::ConvertDeviceInfo(Napi::Env env, SoundIoDevice *de
 	// Set all properties in the object
 	devInfo.Set("name", dev->name);
 	devInfo.Set("id", dev->id);
-	devInfo.Set("channels", dev->current_layout.channel_count);
-	// devInfo.Set("sampleRates", ArrayFromVector(env, dev.sampleRates));
+
+	Napi::Array formats = Napi::Array::New(env, dev->format_count);
+	for (size_t i = 0; i < dev->format_count; i++)
+	{
+		formats[i] = Napi::Number::New(env, dev->formats[i]);
+	}
+	devInfo.Set("formats", formats);
+
+	Napi::Array sampleRates = Napi::Array::New(env, dev->sample_rate_count);
+	for (size_t i = 0; i < dev->sample_rate_count; i++)
+	{
+		Napi::Object sampleRateRange = Napi::Object::New(env);
+		sampleRateRange.Set("min", dev->sample_rates[i].min);
+		sampleRateRange.Set("max", dev->sample_rates[i].max);
+		sampleRates[i] = sampleRateRange;
+	}
+	devInfo.Set("sampleRates", sampleRates);
+
+	Napi::Array channelLayouts = Napi::Array::New(env, dev->layout_count);
+	for (size_t i = 0; i < dev->layout_count; i++)
+	{
+		Napi::Object layout = Napi::Object::New(env);
+		layout.Set("name", dev->layouts[i].name);
+		layout.Set("channelCount", dev->layouts[i].channel_count);
+		channelLayouts[i] = layout;
+	}
+	devInfo.Set("channelLayouts", channelLayouts);
 
 	return devInfo;
 }

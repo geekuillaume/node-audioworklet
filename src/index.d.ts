@@ -40,29 +40,16 @@ declare interface SoundioDeviceInfo {
 	/** Character string device identifier. */
 	name: string;
 
-	/** Maximum output channels supported by device. */
-	channels: number;
-
-	// /** Maximum input channels supported by device. */
-	// inputChannels: number;
-
-	// /** Maximum simultaneous input/output channels supported by device. */
-	// duplexChannels: number;
-
-	// /** Is the device the default output device */
-	// isDefaultOutput: number;
-
-	// /** Is the device the default input device */
-	// isDefaultInput: number;
-
-	// /** Supported sample rates (queried from list of standard rates). */
-	// sampleRates: Array<number>;
-
-	// /** Preferred sample rate, e.g. for WASAPI the system sample rate. */
-	// preferredSampleRate: number;
-
-	// /** Bit mask of supported data formats. */
-	// nativeFormats: number;
+	id: string;
+	formats: SoundioAudioFormat[];
+	sampleRates: {
+		min: number;
+		max: number;
+	}[];
+	channelLayouts: {
+		name: string;
+		channelCount: number;
+	}[];
 }
 
 declare interface SoundioDevicesResponse {
