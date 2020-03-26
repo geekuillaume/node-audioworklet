@@ -8,13 +8,7 @@ Napi::Value SoundioConverter::ConvertDeviceInfo(Napi::Env env, SoundIoDevice *de
 	devInfo.Set("name", dev->name);
 	devInfo.Set("id", dev->id);
 	devInfo.Set("channels", dev->current_layout.channel_count);
-	// devInfo.Set("inputChannels", dev.inputChannels);
-	// devInfo.Set("duplexChannels", dev.duplexChannels);
-	// devInfo.Set("isDefaultOutput", dev.isDefaultOutput);
-	// devInfo.Set("isDefaultInput", dev.isDefaultInput);
 	// devInfo.Set("sampleRates", ArrayFromVector(env, dev.sampleRates));
-	// devInfo.Set("preferredSampleRate", dev.preferredSampleRate);
-	// devInfo.Set("nativeFormats", dev.nativeFormats);
 
 	return devInfo;
 }
