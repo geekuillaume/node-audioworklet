@@ -276,9 +276,15 @@ void SoundioWrap::openOutputStream(const Napi::CallbackInfo &info)
 
 	if (!opts.Get("format").IsNull() && !opts.Get("format").IsUndefined()) {
 		outstream->format = (SoundIoFormat)opts.Get("format").As<Napi::Number>().Int32Value();
+		if (!soundio_device_supports_format(device, outstream->format)) {
+			throw Napi::Error::New(info.Env(), "format not supported");
+		}
 	}
 	if (!opts.Get("sampleRate").IsNull() && !opts.Get("sampleRate").IsUndefined()) {
 		outstream->sample_rate = opts.Get("sampleRate").As<Napi::Number>();
+		if (!soundio_device_supports_sample_rate(device, outstream->sample_rate)) {
+			throw Napi::Error::New(info.Env(), "sample rate not supported");
+		}
 	}
 	if (!opts.Get("name").IsNull() && !opts.Get("name").IsUndefined()) {
 		outstream->name = opts.Get("name").As<Napi::String>().Utf8Value().c_str();
