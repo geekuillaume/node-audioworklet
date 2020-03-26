@@ -117,15 +117,6 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 			}
 
 			frames_left -= frame_count;
-
-			if ((err = soundio_outstream_get_latency(outstream, &outLatency))) {
-				// todo call an error callback here
-				break;
-			}
-
-			if (outLatency > wrap->_configuredOutputBufferDuration) {
-				break;
-			}
 		}
 	}
 }
@@ -300,8 +291,6 @@ void SoundioWrap::openOutputStream(const Napi::CallbackInfo &info)
 	if (!opts.Get("name").IsNull() && !opts.Get("name").IsUndefined()) {
 		outstream->name = opts.Get("name").As<Napi::String>().Utf8Value().c_str();
 	}
-	outstream->userdata = this;
-	outstream->write_callback = write_callback;
 
 	if (!opts.Get("process").IsNull() && !opts.Get("process").IsUndefined()) {
 		_setProcessFunction(info.Env(), opts.Get("process").As<Napi::Function>());
@@ -312,6 +301,10 @@ void SoundioWrap::openOutputStream(const Napi::CallbackInfo &info)
 	if (!opts.Get("bufferDuration").IsNull() && !opts.Get("bufferDuration").IsUndefined()) {
 		_configuredOutputBufferDuration = opts.Get("bufferDuration").As<Napi::Number>().DoubleValue();
 	}
+
+	outstream->userdata = this;
+	outstream->write_callback = write_callback;
+	outstream->software_latency = _configuredOutputBufferDuration;
 
 	if ((err = soundio_outstream_open(outstream))) {
 			soundio_outstream_destroy(outstream);
