@@ -10,11 +10,11 @@ const radPerSecond = Math.PI * 2 * pitch;
 const processFrame = (outputChannels) => {
   for (let sample = 0; sample < outputChannels[0].length; sample++) {
     const sinSample = Math.sin(radPerSecond * (currentSample / 48000));
-    outputChannels[0][sample] = sinSample;
-    outputChannels[1][sample] = sinSample;
+    outputChannels.forEach((channel) => {
+      channel[sample] = sinSample;
+    });
     currentSample += 1;
   }
-
   return streamStatus;
 }
 
@@ -27,10 +27,6 @@ soundio.openOutputStream({
 });
 console.log('Starting stream');
 soundio.startOutputStream();
-
-setInterval(() => {
-  console.log(`Latency: ${soundio.getStreamLatency()}`);
-}, 300);
 
 setTimeout(() => {
   console.log('Stopping stream');

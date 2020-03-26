@@ -26,7 +26,7 @@ soundio.openOutputStream({
   sampleRate: 48000,
   name: "Latency",
   process: processFrame,
-  bufferDuration: 0.05,
+  bufferDuration: 0.1,
 });
 console.log('Starting stream');
 soundio.startOutputStream();
