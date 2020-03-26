@@ -3,6 +3,8 @@
 #include <cmath>
 #include <future>
 #include <iostream>
+#include <bits/stdc++.h>
+#include <sys/time.h>
 
 #include "soundio_converter.h"
 
@@ -20,7 +22,7 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 	int err;
 	// wrap->_processfnMutex.lock();
 
-	// std::cout << frame_count_min << " -> " << frame_count_max << " - will write " << frames_left << '\n';
+	// std::cout << frame_count_min << " -> " << frame_count_max << '\n';
 	while (frames_left >= wrap->_outstreamFrameSize)
 	{
 		std::promise<bool> processPromise;
@@ -83,10 +85,19 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 
 			if ( processStatus != napi_ok )
 			{
-				// call write end here
 				break;
 			} else {
+				// struct timespec start, end;
+				// clock_gettime(CLOCK_MONOTONIC, &start);
 				processFuture.wait();
+				// clock_gettime(CLOCK_MONOTONIC, &end);
+
+				// double time_taken;
+				// time_taken = (end.tv_sec - start.tv_sec) * 1e9;
+				// time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
+				// std::cout << "Time taken by process function is : " << std::fixed
+				// 		<< time_taken << std::setprecision(9);
+				// std::cout << " sec" << std::endl;
 			}
 
 			for (int channel = 0; channel < outstream->layout.channel_count; channel += 1) {
