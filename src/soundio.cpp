@@ -39,37 +39,37 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 				break;
 			}
 		}
-
 		if (!frame_count)
 			break;
 
 		if (wrap->_processFramefn) {
-			auto processStatus = wrap->_processFramefn.NonBlockingCall([format, jsBuffer, jsChannelBufferSize, &processPromise](Napi::Env env, Napi::Function callback) {
+			auto processStatus = wrap->_processFramefn.BlockingCall([format, jsBuffer, frame_count, &processPromise](Napi::Env env, Napi::Function callback) {
 				size_t bytes_per_sample = soundio_get_bytes_per_sample(format);
+				int bufferSize = frame_count * bytes_per_sample;
 
 				Napi::Array outputs = Napi::Array::New(env);
 
 				outputs = Napi::Array::New(env, jsBuffer.size());
 				for (size_t channel = 0; channel < jsBuffer.size(); channel++)
 				{
-					Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, jsBuffer[channel], jsChannelBufferSize);
+					Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, jsBuffer[channel], bufferSize);
 
 					if (format == SoundIoFormatS8) {
-						outputs[channel] = Napi::TypedArrayOf<int8_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<int8_t>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					} else if (format == SoundIoFormatU8) {
-						outputs[channel] = Napi::TypedArrayOf<uint8_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<uint8_t>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					} else if (format == SoundIoFormatS16LE || format == SoundIoFormatS16LE) {
-						outputs[channel] = Napi::TypedArrayOf<int16_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<int16_t>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					} else if (format == SoundIoFormatU16LE || format == SoundIoFormatU16BE) {
-						outputs[channel] = Napi::TypedArrayOf<uint16_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<uint16_t>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					} else if (format == SoundIoFormatS32LE || format == SoundIoFormatS32BE) {
-						outputs[channel] = Napi::TypedArrayOf<int32_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<int32_t>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					} else if (format == SoundIoFormatU32LE || format == SoundIoFormatU32BE) {
-						outputs[channel] = Napi::TypedArrayOf<uint32_t>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<uint32_t>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					} else if (format == SoundIoFormatFloat32LE || format == SoundIoFormatFloat32BE) {
-						outputs[channel] = Napi::TypedArrayOf<float>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<float>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					} else if (format == SoundIoFormatFloat64LE || format == SoundIoFormatFloat64BE) {
-						outputs[channel] = Napi::TypedArrayOf<double>::New(env, jsChannelBufferSize / bytes_per_sample, buffer, 0);
+						outputs[channel] = Napi::TypedArrayOf<double>::New(env, bufferSize / bytes_per_sample, buffer, 0);
 					}
 				}
 
