@@ -1,6 +1,6 @@
 {
 	"name": "audioworklet",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "Stream audio generated in realtime by a function to the speaker",
 	"main": "src/index.js",
 	"types": "src/index.d.ts",
