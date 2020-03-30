@@ -100,24 +100,25 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 				// std::cout << " sec" << std::endl;
 			}
 
-			for (int channel = 0; channel < outstream->layout.channel_count; channel += 1) {
-				for (int frame = 0; frame < frame_count; frame++) {
-					memcpy(areas[channel].ptr + (areas[channel].step * frame), // destination: it can be interleaved or not so we need to take care of one frame after another
-						jsBuffer[channel] + (frame * outstream -> bytes_per_sample), // source
-						outstream->bytes_per_sample);
-				}
-			}
-
-			if ((err = soundio_outstream_end_write(outstream))) {
-				// todo call an error callback here
-				break;
-			}
 			if (processFuture.get() == false) {
 				soundio_outstream_pause(outstream, true);
 			}
-
-			frames_left -= frame_count;
 		}
+
+		for (int channel = 0; channel < outstream->layout.channel_count; channel += 1) {
+			for (int frame = 0; frame < frame_count; frame++) {
+				memcpy(areas[channel].ptr + (areas[channel].step * frame), // destination: it can be interleaved or not so we need to take care of one frame after another
+					jsBuffer[channel] + (frame * outstream -> bytes_per_sample), // source
+					outstream->bytes_per_sample);
+			}
+		}
+
+		if ((err = soundio_outstream_end_write(outstream))) {
+			// todo call an error callback here
+			break;
+		}
+
+		frames_left -= frame_count;
 	}
 }
 
