@@ -56,3 +56,19 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./scripts/build_for_arch.sh
 
+  prebuild-lib-arm64v8:
+    name: Prebuild lib arm64v8
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v1
+
+    - name: Init submodules
+      run: git submodule update --init --recursive
+
+    - name: Build for arm64v8
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CROSS_ENV: arm64v8
+      run: ./scripts/build_for_arch.sh
+
