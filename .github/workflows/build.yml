@@ -50,8 +50,8 @@ jobs:
     - name: Build for armv7
       run: ./scripts/build_for_arch.sh --no-upload
 
-  prebuild-lib-arm64:
-    name: Prebuild lib ARM64
+  prebuild-lib-arm64v8:
+    name: Prebuild lib arm64v8
     runs-on: ubuntu-latest
     steps:
     - name: Check out Git repository
@@ -60,7 +60,7 @@ jobs:
     - name: Init submodules
       run: git submodule update --init --recursive
 
-    - name: Build for armv7
+    - name: Build for arm64v8
       env:
-        CROSS_ENV: aarch64
+        CROSS_ENV: arm64v8
       run: ./scripts/build_for_arch.sh --no-upload
