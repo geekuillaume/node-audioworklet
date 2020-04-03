@@ -50,3 +50,17 @@ jobs:
     - name: Build for armv7
       run: ./scripts/build_for_arch.sh --no-upload
 
+  prebuild-lib-arm64:
+    name: Prebuild lib ARM64
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v1
+
+    - name: Init submodules
+      run: git submodule update --init --recursive
+
+    - name: Build for armv7
+      env:
+        CROSS_ENV: aarch64
+      run: ./scripts/build_for_arch.sh --no-upload
