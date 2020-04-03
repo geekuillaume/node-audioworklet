@@ -86,8 +86,13 @@ export type TypedArray = Int8Array |
 
 interface OutputStreamParams {
 	format?: SoundioAudioFormat;
+
+	/** number of samples per second per channel */
 	sampleRate?: number;
+
+	/** number of samples per channel to pass to the process function, if not set, will be dynamicly set on each frame to minimize the number of calls to the process function */
 	frameSize?: number;
+
 	name?: string;
 	deviceId?: number;
 	process?: ((outputChannels: TypedArray[]) => boolean);

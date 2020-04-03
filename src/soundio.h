@@ -44,9 +44,9 @@ private:
 	SoundIoOutStream *_outstream;
 	SoundIoInStream *_instream;
 
-	unsigned int 	_outstreamFrameSize;
 	double _configuredOutputBufferDuration;
-	std::vector<uint8_t *>	_outstreamJsBuffer;
+	unsigned int 	_outstreamFrameSize;
+	std::vector<std::vector<uint8_t>>	_outstreamJsBuffer;
 
 	std::mutex _processfnMutex;
 	Napi::ThreadSafeFunction _processFramefn;

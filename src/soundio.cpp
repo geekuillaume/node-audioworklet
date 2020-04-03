@@ -10,29 +10,37 @@
 
 void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int frame_count_max)
 {
+	// std::cout << frame_count_min << " -> " << frame_count_max << '\n';
 	SoundioWrap *wrap = (SoundioWrap *)outstream->userdata;
 	SoundIoFormat format = outstream->format;
 
 	int frames_left = frame_count_max;
-	size_t jsChannelBufferSize = wrap->_outstreamFrameSize * outstream->bytes_per_sample;
-	std::vector<uint8_t *> jsBuffer = wrap->_outstreamJsBuffer;
+	size_t outstreamFrameSize = wrap->_outstreamFrameSize == 0 ? frame_count_max : wrap->_outstreamFrameSize;
+
+	size_t jsChannelBufferSize = outstreamFrameSize * outstream->bytes_per_sample;
+	std::vector<std::vector<uint8_t>> &jsBuffer = wrap->_outstreamJsBuffer;
+
+	for (std::vector<std::vector<uint8_t>>::iterator it = jsBuffer.begin(); it != jsBuffer.end(); ++it) {
+		if (it->size() < jsChannelBufferSize) {
+			it->resize(jsChannelBufferSize);
+		}
+	}
 
 	struct SoundIoChannelArea *areas;
 	double outLatency;
 	int err;
 	// wrap->_processfnMutex.lock();
 
-	// std::cout << frame_count_min << " -> " << frame_count_max << '\n';
-	while (frames_left >= wrap->_outstreamFrameSize)
+	while (frames_left >= outstreamFrameSize)
 	{
 		std::promise<bool> processPromise;
 		std::future<bool> processFuture = processPromise.get_future();
 
-		for(void *channelBuffer : jsBuffer) {
-			memset(channelBuffer, 0, jsChannelBufferSize);
+		for (std::vector<std::vector<uint8_t>>::iterator it = jsBuffer.begin(); it != jsBuffer.end(); ++it) {
+			memset(it->data(), 0, it->size());
 		}
 
-		int frame_count = wrap->_outstreamFrameSize;
+		int frame_count = outstreamFrameSize;
 		if ((err = soundio_outstream_begin_write(outstream, &areas, &frame_count))) {
 			if (err != SoundIoErrorUnderflow) {
 				// todo call an error callback here
@@ -43,7 +51,7 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 			break;
 
 		if (wrap->_processFramefn) {
-			auto processStatus = wrap->_processFramefn.BlockingCall([format, jsBuffer, frame_count, &processPromise](Napi::Env env, Napi::Function callback) {
+			auto processStatus = wrap->_processFramefn.BlockingCall([format, &jsBuffer, frame_count, &processPromise](Napi::Env env, Napi::Function callback) {
 				size_t bytes_per_sample = soundio_get_bytes_per_sample(format);
 				int bufferSize = frame_count * bytes_per_sample;
 
@@ -52,7 +60,7 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 				outputs = Napi::Array::New(env, jsBuffer.size());
 				for (size_t channel = 0; channel < jsBuffer.size(); channel++)
 				{
-					Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, jsBuffer[channel], bufferSize);
+					Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, jsBuffer[channel].data(), jsBuffer[channel].size());
 
 					if (format == SoundIoFormatS8) {
 						outputs[channel] = Napi::TypedArrayOf<int8_t>::New(env, bufferSize / bytes_per_sample, buffer, 0);
@@ -108,7 +116,7 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 		for (int channel = 0; channel < outstream->layout.channel_count; channel += 1) {
 			for (int frame = 0; frame < frame_count; frame++) {
 				memcpy(areas[channel].ptr + (areas[channel].step * frame), // destination: it can be interleaved or not so we need to take care of one frame after another
-					jsBuffer[channel] + (frame * outstream -> bytes_per_sample), // source
+					jsBuffer[channel].data() + (frame * outstream -> bytes_per_sample), // source
 					outstream->bytes_per_sample);
 			}
 		}
@@ -177,7 +185,7 @@ SoundioWrap::SoundioWrap(
 	Napi::ObjectWrap<SoundioWrap>(info),
 	_outstream(nullptr),
 	_processFramefn(nullptr),
-	_outstreamFrameSize(480),
+	_outstreamFrameSize(0),
 	_configuredOutputBufferDuration(0.1)
 {
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This()); // this is used to prevent the GC to collect this object while a stream is running
@@ -315,7 +323,7 @@ void SoundioWrap::openOutputStream(const Napi::CallbackInfo &info)
 
 	for (size_t i = 0; i < outstream->layout.channel_count; i++)
 	{
-		_outstreamJsBuffer.push_back(new uint8_t[_outstreamFrameSize * outstream->bytes_per_sample]);
+		_outstreamJsBuffer.push_back(std::vector<uint8_t>(_outstreamFrameSize * outstream->bytes_per_sample, uint8_t(0)));
 	}
 
 	_outstream = outstream;
