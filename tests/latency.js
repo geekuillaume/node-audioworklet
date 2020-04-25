@@ -20,21 +20,19 @@ const processFrame = (outputChannels) => {
   return streamStatus;
 }
 
+const device = soundio.getDefaultOutputDevice();
 console.log('Opening stream');
-soundio.openOutputStream({
+const outputStream = device.openOutputStream({
   format: Soundio.SoundIoFormatFloat32LE,
-  sampleRate: 48000,
-  name: "Latency",
   process: processFrame,
-  bufferDuration: 0.1,
 });
-console.log('Starting stream');
-soundio.startOutputStream();
 
+console.log('Starting stream');
+outputStream.start();
 
 const triggerBeep = () => {
   currentPitch = pitch;
-  console.log(`Latency: ${soundio.getStreamLatency()}s`);
+  console.log(`Latency: ${outputStream.getLatency()}s`);
   console.log('Beep');
   setTimeout(() => {
     console.log('End beep');

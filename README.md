@@ -21,85 +21,149 @@ yarn add audioworklet
 ### List devices
 
 ```javascript
-const { Soundio } = require('../');
+const { Soundio } = require('audioworklet');
 
 const soundio = new Soundio();
-console.log(soundio.getDevices())
 
-console.log('default output:', soundio.getDefaultOutputDeviceIndex());
-console.log('default input:', soundio.getDefaultInputDeviceIndex());
+const logDevice = (device) => {
+  console.log('---------------');
+  for (let prop in device) {
+    console.log(`${prop}:`, device[prop]);
+  }
+}
+
+soundio.getDevices().outputDevices.forEach(logDevice);
+soundio.getDevices().inputDevices.forEach(logDevice);
+
+console.log('-------')
+
+console.log('default output:', soundio.getDefaultOutputDevice().name);
+console.log('default input:', soundio.getDefaultInputDevice().name);
 console.log('API:', soundio.getApi());
 ```
 
 Will output:
 
 ```
-{
-  outputDevices: [
-    {
-      name: 'PCM2704 16-bit stereo audio DAC Digital Stereo (IEC958)',
-      id: 'alsa_output.usb-Audioengine_Audioengine_2_-00.iec958-stereo',
-      channels: 2
-    },
-    {
-      name: 'Built-in Audio Analog Stereo',
-      id: 'alsa_output.pci-0000_00_1f.3.analog-stereo',
-      channels: 2
-    }
-  ],
-  inputDevices: [
-    {
-      name: 'Monitor of PCM2704 16-bit stereo audio DAC Digital Stereo (IEC958)',
-      id: 'alsa_output.usb-Audioengine_Audioengine_2_-00.iec958-stereo.monitor',
-      channels: 2
-    },
-    {
-      name: 'Webcam C930e Analog Stereo',
-      id: 'alsa_input.usb-046d_Logitech_Webcam_C930e_1658212E-02.analog-stereo',
-      channels: 2
-    },
-    {
-      name: 'Monitor of Built-in Audio Analog Stereo',
-      id: 'alsa_output.pci-0000_00_1f.3.analog-stereo.monitor',
-      channels: 2
-    },
-    {
-      name: 'Built-in Audio Analog Stereo',
-      id: 'alsa_input.pci-0000_00_1f.3.analog-stereo',
-      channels: 2
-    }
-  ]
-}
-default output: 1
-default input: 3
+---------------
+name: Built-in Audio Analog Stereo
+id: alsa_output.pci-0000_00_1f.3.analog-stereo
+formats: [
+   2,  3, 4, 15, 16,
+  11, 12, 7,  8
+]
+sampleRates: [ { min: 8000, max: 5644800 } ]
+channelLayouts: [
+  { name: 'Mono', channelCount: 1 },
+  { name: 'Stereo', channelCount: 2 },
+  { name: '2.1', channelCount: 3 },
+  { name: '3.0', channelCount: 3 },
+  { name: '3.0 (back)', channelCount: 3 },
+  { name: '3.1', channelCount: 4 },
+  { name: '4.0', channelCount: 4 },
+  { name: 'Quad', channelCount: 4 },
+  { name: 'Quad (side)', channelCount: 4 },
+  { name: '4.1', channelCount: 5 },
+  { name: '5.0 (back)', channelCount: 5 },
+  { name: '5.0 (side)', channelCount: 5 },
+  { name: '5.1', channelCount: 6 },
+  { name: '5.1 (back)', channelCount: 6 },
+  { name: '6.0 (side)', channelCount: 6 },
+  { name: '6.0 (front)', channelCount: 6 },
+  { name: 'Hexagonal', channelCount: 6 },
+  { name: '6.1', channelCount: 7 },
+  { name: '6.1 (back)', channelCount: 7 },
+  { name: '6.1 (front)', channelCount: 7 },
+  { name: '7.0', channelCount: 7 },
+  { name: '7.0 (front)', channelCount: 7 },
+  { name: '7.1', channelCount: 8 },
+  { name: '7.1 (wide)', channelCount: 8 },
+  { name: '7.1 (wide) (back)', channelCount: 8 },
+  { name: 'Octagonal', channelCount: 8 }
+]
+isInput: false
+isOutput: true
+---------------
+name: Webcam C930e Analog Stereo
+id: alsa_input.usb-046d_Logitech_Webcam_C930e_1658212E-02.analog-stereo
+formats: [
+   2,  3, 4, 15, 16,
+  11, 12, 7,  8
+]
+sampleRates: [ { min: 8000, max: 5644800 } ]
+channelLayouts: [
+  { name: 'Mono', channelCount: 1 },
+  { name: 'Stereo', channelCount: 2 },
+  { name: '2.1', channelCount: 3 },
+  { name: '3.0', channelCount: 3 },
+  { name: '3.0 (back)', channelCount: 3 },
+  { name: '3.1', channelCount: 4 },
+  { name: '4.0', channelCount: 4 },
+  { name: 'Quad', channelCount: 4 },
+  { name: 'Quad (side)', channelCount: 4 },
+  { name: '4.1', channelCount: 5 },
+  { name: '5.0 (back)', channelCount: 5 },
+  { name: '5.0 (side)', channelCount: 5 },
+  { name: '5.1', channelCount: 6 },
+  { name: '5.1 (back)', channelCount: 6 },
+  { name: '6.0 (side)', channelCount: 6 },
+  { name: '6.0 (front)', channelCount: 6 },
+  { name: 'Hexagonal', channelCount: 6 },
+  { name: '6.1', channelCount: 7 },
+  { name: '6.1 (back)', channelCount: 7 },
+  { name: '6.1 (front)', channelCount: 7 },
+  { name: '7.0', channelCount: 7 },
+  { name: '7.0 (front)', channelCount: 7 },
+  { name: '7.1', channelCount: 8 },
+  { name: '7.1 (wide)', channelCount: 8 },
+  { name: '7.1 (wide) (back)', channelCount: 8 },
+  { name: 'Octagonal', channelCount: 8 }
+]
+isInput: true
+isOutput: false
+-------
+default output: Built-in Audio Analog Stereo
+default input: Webcam C930e Analog Stereo
 API: PulseAudio
 ```
 
 ### Play white noise
 
 ```javascript
-const { Soundio } = require('../');
+const { Soundio } = require('audioworklet');
 const soundio = new Soundio();
 
+let streamStatus = true;
+
 const processFrame = (outputChannels) => {
-  // outputChannels is an array of TypedArray, one per channel, in this example, SoundIoFormatFloat32LE is used so it will be an array of Float32Array
   for (let sample = 0; sample < outputChannels[0].length; sample++) {
     outputChannels[0][sample] = Math.random();
     outputChannels[1][sample] = Math.random();
   }
-  // if the function returns false, the stream is paused after this sample
-  return true;
+
+  return streamStatus;
 }
 
-soundio.openOutputStream({
-  format: Soundio.SoundIoFormatFloat32LE, // can be 8,16,32 signed/unsigned int in Big or Little endian and also Float64
-  sampleRate: 48000, // in sample per seconds
-  name: "Test", // used by some audio backend to show more info about the stream
-  frameSize: 480, // size of the output buffer passed to the process function, low means responsive audio stream, high means less CPU usage
-  bufferDuration: 0.1, // in seconds, how long in the future to emit samples for, high means more delay but better CPU usage
+const device = soundio.getDefaultOutputDevice();
+console.log('Opening stream');
+const outputStream = device.openOutputStream({
+  format: Soundio.SoundIoFormatFloat32LE,
+  sampleRate: 48000,
+  name: "test test",
   process: processFrame,
 });
-soundio.startOutputStream();
+
+console.log('Starting stream');
+outputStream.start();
+
+setTimeout(() => {
+  console.log('Stopping stream');
+  // streamStatus = false;
+  outputStream.close();
+}, 2000);
+setTimeout(() => {
+  process.exit(0);
+}, 3000);
 ```
 
 ### Use another file as AudioWorklet
@@ -109,10 +173,11 @@ const path = require('path');
 const { Soundio } = require('audioworklet');
 const soundio = new Soundio();
 
-soundio.openOutputStream();
+const device = soundio.getDefaultOutputDevice();
+const outputStream = device.openOutputStream();
 
-soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
-soundio.startOutputStream();
+outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
+outputStream.start();
 
 setTimeout(() => {
   console.log('exiting');
@@ -151,10 +216,11 @@ const path = require('path');
 const { Soundio } = require('audioworklet');
 const soundio = new Soundio();
 
-soundio.openOutputStream();
+const device = soundio.getDefaultOutputDevice();
+const outputStream = device.openOutputStream();
 
-const worklet = soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
-soundio.startOutputStream();
+const worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
+outputStream.start();
 
 setTimeout(() => {
   console.log('Muting worklet');

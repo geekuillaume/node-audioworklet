@@ -18,15 +18,16 @@ const processFrame = (outputChannels) => {
   return streamStatus;
 }
 
+const device = soundio.getDefaultOutputDevice();
 console.log('Opening stream');
-soundio.openOutputStream({
+const outputStream = device.openOutputStream({
   format: Soundio.SoundIoFormatFloat32LE,
-  sampleRate: 48000,
-  name: "test test",
   process: processFrame,
+  sampleRate: 48000,
 });
+
 console.log('Starting stream');
-soundio.startOutputStream();
+outputStream.start();
 
 setTimeout(() => {
   console.log('Stopping stream');

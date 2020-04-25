@@ -19,21 +19,22 @@ const processFrame = (outputChannels) => {
   return streamStatus;
 }
 
+const device = soundio.getDefaultOutputDevice();
 console.log('Opening stream');
-soundio.openOutputStream({
+const outputStream = device.openOutputStream({
   format: Soundio.SoundIoFormatFloat32LE,
   process: processFrame,
 });
-console.log('Starting stream');
-soundio.startOutputStream();
 
+console.log('Starting stream');
+outputStream.start();
 
 const triggerVolumeDown = () => {
   console.log('Volume down');
-  soundio.setOutputVolume(0.5);
+  outputStream.setVolume(0.5);
   setTimeout(() => {
     console.log('Volume up');
-    soundio.setOutputVolume(1);
+    outputStream.setVolume(1);
     setTimeout(triggerVolumeDown, 1000);
   }, 1000);
 }

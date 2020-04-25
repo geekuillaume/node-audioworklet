@@ -1,10 +1,13 @@
 #include <napi.h>
 
 #include "soundio.h"
+#include <iostream>
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
 	SoundioWrap::Init(env, exports);
+	SoundioDevice::Init(env, exports);
+	SoundioOutstream::Init(env, exports);
 
 	return exports;
 }

@@ -18,18 +18,19 @@ const processFrame = (outputBuffer) => {
   return streamStatus;
 }
 
+const device = soundio.getDefaultOutputDevice();
 console.log('Opening stream');
-soundio.openOutputStream({
+const outputStream = device.openOutputStream({
   format: Soundio.SoundIoFormatFloat32LE,
   sampleRate: 48000,
   name: "test test",
 });
 console.log('Starting stream');
-soundio.startOutputStream();
+outputStream.start();
 
 setTimeout(() => {
   console.log('Setting process function');
-  soundio.setProcessFunction(processFrame);
+  outputStream.setProcessFunction(processFrame);
 }, 500);
 
 setTimeout(() => {

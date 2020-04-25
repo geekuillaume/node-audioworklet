@@ -2,10 +2,11 @@ const path = require('path');
 const { Soundio } = require('../');
 const soundio = new Soundio();
 
-soundio.openOutputStream();
+const device = soundio.getDefaultOutputDevice();
+const outputStream = device.openOutputStream();
 
-const worklet = soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
-soundio.startOutputStream();
+const worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
+outputStream.start();
 
 setTimeout(() => {
   console.log('Muting worklet');

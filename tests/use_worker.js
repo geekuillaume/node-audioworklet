@@ -2,10 +2,11 @@ const path = require('path');
 const { Soundio } = require('../');
 const soundio = new Soundio();
 
-soundio.openOutputStream();
+const device = soundio.getDefaultOutputDevice();
+const outputStream = device.openOutputStream();
 
-soundio.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
-soundio.startOutputStream();
+outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
+outputStream.start();
 
 setTimeout(() => {
   console.log('exiting');

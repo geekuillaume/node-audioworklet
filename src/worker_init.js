@@ -3,10 +3,15 @@
 const {
   workerData,
 } = require('worker_threads');
-const {Soundio} = require('../');
+let SoundioOutstream;
+try {
+  SoundioOutstream = require('audioworklet').SoundioOutstream;
+} catch (e) {
+  SoundioOutstream = require('../').SoundioOutstream;
+}
 
 const scriptPath = workerData.scriptPath;
-const rtAudioPtr = workerData.rtAudioPtr;
+const outstreamPtr = workerData.outstreamPtr;
 
 const workerModule = require(scriptPath);
 let WorkerClass;
@@ -17,7 +22,7 @@ if (workerModule.default) {
 }
 
 const worker = new WorkerClass();
-Soundio._setProcessFunctionFromExternal(rtAudioPtr, worker.process.bind(worker));
+SoundioOutstream._setProcessFunctionFromExternal(outstreamPtr, worker.process.bind(worker));
 
 
 

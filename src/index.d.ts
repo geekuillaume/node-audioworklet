@@ -2,59 +2,9 @@
 
 import { Worker } from 'worker_threads';
 
-// /** Audio API specifier arguments. */
-declare const enum SoundioApi {
-	/** Search for a working compiled API. */
-	UNSPECIFIED,
-
-	/** The Advanced Linux Sound Architecture API. */
-	LINUX_ALSA,
-
-	/** The Linux PulseAudio API. */
-	LINUX_PULSE,
-
-	/** The Linux Open Sound System API. */
-	LINUX_OSS,
-
-	/** The Jack Low-Latency Audio Server API. */
-	UNIX_JACK,
-
-	/** Macintosh OS-X Core Audio API. */
-	MACOSX_CORE,
-
-	/** The Microsoft WASAPI API. */
-	WINDOWS_WASAPI,
-
-	/** The Steinberg Audio Stream I/O API. */
-	WINDOWS_ASIO,
-
-	/** The Microsoft DirectSound API. */
-	WINDOWS_DS,
-
-	/** A compilable but non-functional API. */
-	RTAUDIO_DUMMY
-}
-
-/** The public device information structure for returning queried values. */
-declare interface SoundioDeviceInfo {
-	/** Character string device identifier. */
-	name: string;
-
-	id: string;
-	formats: SoundioAudioFormat[];
-	sampleRates: {
-		min: number;
-		max: number;
-	}[];
-	channelLayouts: {
-		name: string;
-		channelCount: number;
-	}[];
-}
-
 declare interface SoundioDevicesResponse {
-	outputDevices: SoundioDeviceInfo[];
-	inputDevices: SoundioDeviceInfo[];
+	outputDevices: SoundioDevice[];
+	inputDevices: SoundioDevice[];
 }
 
 declare const enum SoundioAudioFormat {
@@ -120,34 +70,41 @@ export declare class Soundio {
 	static SoundIoFormatFloat64LE: SoundioAudioFormat;
 	static SoundIoFormatFloat64BE: SoundioAudioFormat;
 
-	/**
-	 * Create an Soundio instance.
-	 * @param api The audio API to use. (Default will be automatically selected)
-	 */
-	constructor(api?: SoundioApi);
-
-	openOutputStream(params?: OutputStreamParams): void;
-	closeOutputStream(): void;
-	isOutputStreamOpen(): boolean;
-
-	startOutputStream(): void;
-	setOutputPause(paused: boolean): void;
-
 	getApi(): string;
-
-	getStreamLatency(): number;
-
-	/**
-	 * Returns the list of available devices.
-	 */
 	getDevices(): SoundioDevicesResponse;
+	getDefaultInputDevice(): SoundioDevice;
+	getDefaultOutputDevice(): SoundioDevice;
+}
 
-	getDefaultInputDeviceIndex(): number;
-	getDefaultOutputDeviceIndex(): number;
+export declare class SoundioDevice {
+	name: string;
+	id: string;
+	isInput: boolean;
+	isOutput: boolean;
+	formats: SoundioAudioFormat[];
+	sampleRates: {
+		min: number;
+		max: number;
+	}[];
+	channelLayouts: {
+		name: string;
+		channelCount: number;
+	}[];
 
+	openOutputStream(params?: OutputStreamParams): SoundioOutputStream;
+}
+
+export declare class SoundioOutputStream {
+	start(): void;
+
+	close(): void;
+	isOpen(): boolean;
+
+	setPause(paused: boolean): void;
+	getLatency(): number;
+	setVolume(volume: number): void;
 	setProcessFunction(process: ((outputChannels: Buffer[]) => boolean)): void;
-	clearOutputBuffer();
-	setOutputVolume(volume: number): void;
+	clearBuffer(): void;
 
 	/**
 	 * Start the module specified by scriptPath in a new worker thread and use it as the process function
