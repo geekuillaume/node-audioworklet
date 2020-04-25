@@ -16,6 +16,7 @@ void SoundioDevice::Init(Napi::Env &env, Napi::Object exports)
         InstanceAccessor("isOutput", &SoundioDevice::getIsOutput, nullptr, napi_enumerable),
 
         InstanceMethod("openOutputStream", &SoundioDevice::openOutputStream),
+        InstanceMethod("openInputStream", &SoundioDevice::openInputStream),
       });
   constructor = Napi::Persistent(ctor);
   constructor.SuppressDestruct();
@@ -28,11 +29,12 @@ SoundioDevice::SoundioDevice(
 ) :
 	Napi::ObjectWrap<SoundioDevice>(info)
 {
-	_ownRef = Napi::Reference<Napi::Value>::New(info.This()); // this is used to prevent the GC to collect this object while a stream is running
-  _device = info[0].As<Napi::External<SoundIoDevice>>().Data();
+	_ownRef = Napi::Reference<Napi::Value>::New(info.This());
+  _parentSoundioRef = Napi::Reference<Napi::Value>::New(info[0], 1); // this is used to prevent the GC to collect the parent soundio object while a device is still accessible
+  _device = info[1].As<Napi::External<SoundIoDevice>>().Data();
 
-  _isOutput = info[1].As<Napi::Boolean>();
-  _isInput = info[2].As<Napi::Boolean>();
+  _isOutput = info[2].As<Napi::Boolean>();
+  _isInput = info[3].As<Napi::Boolean>();
 
   soundio_device_ref(_device);
 }
@@ -100,16 +102,26 @@ Napi::Value SoundioDevice::getIsOutput(const Napi::CallbackInfo &info)
 
 Napi::Value SoundioDevice::openOutputStream(const Napi::CallbackInfo &info)
 {
-	Napi::Object opts = info[0].IsUndefined() ? Napi::Object::New(info.Env()) : info[0].As<Napi::Object>();
-
   if (!_isOutput) {
     throw Napi::Error::New(info.Env(), "This is not an output device");
   }
 
   return SoundioOutstream::constructor.New({
+    info.This(),
     Napi::External<SoundIoDevice>::New(info.Env(), _device),
     info[0]
   });
+}
 
-	_ownRef.Ref();
+Napi::Value SoundioDevice::openInputStream(const Napi::CallbackInfo &info)
+{
+  if (!_isInput) {
+    throw Napi::Error::New(info.Env(), "This is not an input device");
+  }
+
+  return SoundioInstream::constructor.New({
+    info.This(),
+    Napi::External<SoundIoDevice>::New(info.Env(), _device),
+    info[0]
+  });
 }

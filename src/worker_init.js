@@ -3,15 +3,16 @@
 const {
   workerData,
 } = require('worker_threads');
-let SoundioOutstream;
+let audioworklet;
 try {
-  SoundioOutstream = require('audioworklet').SoundioOutstream;
+  audioworklet = require('audioworklet');
 } catch (e) {
-  SoundioOutstream = require('../').SoundioOutstream;
+  audioworklet = require('../');
 }
 
 const scriptPath = workerData.scriptPath;
-const outstreamPtr = workerData.outstreamPtr;
+const streamPtr = workerData.streamPtr;
+const streamType = workerData.streamType;
 
 const workerModule = require(scriptPath);
 let WorkerClass;
@@ -22,7 +23,13 @@ if (workerModule.default) {
 }
 
 const worker = new WorkerClass();
-SoundioOutstream._setProcessFunctionFromExternal(outstreamPtr, worker.process.bind(worker));
+if (streamType === 'instream') {
+  audioworklet.SoundioInstream._setProcessFunctionFromExternal(streamPtr, worker.process.bind(worker));
+} else if (streamType === 'outstream') {
+  audioworklet.SoundioOutstream._setProcessFunctionFromExternal(streamPtr, worker.process.bind(worker));
+} else {
+  throw new Error('Invalid stream type');
+}
 
 
 

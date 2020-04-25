@@ -6,6 +6,7 @@
 	"types": "src/index.d.ts",
 	"scripts": {
 		"build": "npm run patch-vendors && cmake-js compile",
+		"build:debug": "npm run patch-vendors && cmake-js compile -D",
 		"install": "prebuild-install --target 4 -r napi || npm run build",
 		"deploy": "np --no-tests",
 		"build-binaries": "npm run patch-vendors && prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",

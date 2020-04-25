@@ -93,12 +93,22 @@ Napi::Value SoundioWrap::getDevices(const Napi::CallbackInfo &info)
 	// Convert the devices to objects
 	for (unsigned int i = 0; i < outputDevices.size(); i++)
 	{
-		outputDevicesArray[i] = SoundioDevice::constructor.New({ Napi::External<SoundIoDevice>::New(info.Env(), outputDevices[i]), Napi::Boolean::New(info.Env(), true), Napi::Boolean::New(info.Env(), false) });
+		outputDevicesArray[i] = SoundioDevice::constructor.New({
+			info.This(),
+			Napi::External<SoundIoDevice>::New(info.Env(), outputDevices[i]),
+			Napi::Boolean::New(info.Env(), true),
+			Napi::Boolean::New(info.Env(), false)
+		});
 		soundio_device_unref(outputDevices[i]);
 	}
 	for (unsigned int i = 0; i < inputDevices.size(); i++)
 	{
-		inputDevicesArray[i] = SoundioDevice::constructor.New({ Napi::External<SoundIoDevice>::New(info.Env(), inputDevices[i]), Napi::Boolean::New(info.Env(), false), Napi::Boolean::New(info.Env(), true) });
+		inputDevicesArray[i] = SoundioDevice::constructor.New({
+			info.This(),
+			Napi::External<SoundIoDevice>::New(info.Env(), inputDevices[i]),
+			Napi::Boolean::New(info.Env(), false),
+			Napi::Boolean::New(info.Env(), true)
+		});
 		soundio_device_unref(inputDevices[i]);
 	}
 
@@ -114,7 +124,12 @@ Napi::Value SoundioWrap::getDefaultOutputDevice(const Napi::CallbackInfo &info)
 	int defaultDeviceIndex = soundio_default_output_device_index(_soundio);
 	struct SoundIoDevice *device = soundio_get_output_device(_soundio, defaultDeviceIndex);
 
-	return SoundioDevice::constructor.New({ Napi::External<SoundIoDevice>::New(info.Env(), device), Napi::Boolean::New(info.Env(), true), Napi::Boolean::New(info.Env(), false) });;
+	return SoundioDevice::constructor.New({
+		info.This(),
+		Napi::External<SoundIoDevice>::New(info.Env(), device),
+		Napi::Boolean::New(info.Env(), true),
+		Napi::Boolean::New(info.Env(), false)
+	});
 }
 
 Napi::Value SoundioWrap::getDefaultInputDevice(const Napi::CallbackInfo &info)
@@ -122,7 +137,12 @@ Napi::Value SoundioWrap::getDefaultInputDevice(const Napi::CallbackInfo &info)
 	int defaultDeviceIndex = soundio_default_input_device_index(_soundio);
 	struct SoundIoDevice *device = soundio_get_input_device(_soundio, defaultDeviceIndex);
 
-	return SoundioDevice::constructor.New({ Napi::External<SoundIoDevice>::New(info.Env(), device), Napi::Boolean::New(info.Env(), false), Napi::Boolean::New(info.Env(), true) });;
+	return SoundioDevice::constructor.New({
+		info.This(),
+		Napi::External<SoundIoDevice>::New(info.Env(), device),
+		Napi::Boolean::New(info.Env(), false),
+		Napi::Boolean::New(info.Env(), true)
+	});
 }
 
 Napi::Value SoundioWrap::getApi(const Napi::CallbackInfo &info)

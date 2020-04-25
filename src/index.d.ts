@@ -34,7 +34,7 @@ export type TypedArray = Int8Array |
   Float32Array |
   Float64Array;
 
-interface OutputStreamParams {
+interface StreamParams {
 	format?: SoundioAudioFormat;
 
 	/** number of samples per second per channel */
@@ -45,7 +45,7 @@ interface OutputStreamParams {
 
 	name?: string;
 	deviceId?: number;
-	process?: ((outputChannels: TypedArray[]) => boolean);
+	process?: ((inputOrOutputChannels: TypedArray[]) => boolean);
 	bufferDuration?: number;
 }
 
@@ -91,7 +91,8 @@ export declare class SoundioDevice {
 		channelCount: number;
 	}[];
 
-	openOutputStream(params?: OutputStreamParams): SoundioOutputStream;
+	openOutputStream(params?: StreamParams): SoundioOutputStream;
+	openInputStream(params?: StreamParams): SoundioInputStream;
 }
 
 export declare class SoundioOutputStream {
@@ -113,9 +114,27 @@ export declare class SoundioOutputStream {
 	attachProcessFunctionFromWorker(scriptPath: string): Worker;
 }
 
+
+export declare class SoundioInputStream {
+	start(): void;
+
+	close(): void;
+	isOpen(): boolean;
+
+	setPause(paused: boolean): void;
+	getLatency(): number;
+	setProcessFunction(process: ((outputChannels: Buffer[]) => boolean)): void;
+
+	/**
+	 * Start the module specified by scriptPath in a new worker thread and use it as the process function
+	 * The module should export a class extending AudioWorkletProcessor with the process method implemented
+	 */
+	attachProcessFunctionFromWorker(scriptPath: string): Worker;
+}
+
 export declare abstract class AudioWorkletProcessor {
 	constructor();
 
 	port: MessagePort;
-	abstract process(outputChannels: TypedArray[]): boolean;
+	abstract process(inputOrOutputChannels: TypedArray[]): boolean;
 }

@@ -30,13 +30,6 @@ IF (APPLE)
     set(CMAKE_INSTALL_RPATH "@loader_path")
 ENDIF()
 
-# # Compile RtAudio
-# # Enable ASIO and DirectSound support on windows
-# IF (WIN32)
-#     set(ENABLE_WASAPI ON CACHE BOOL "Build WASAPI")
-# ENDIF ()
-
-
 set(BUILD_TESTS OFF CACHE BOOL "test")
 set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "test")
 set(BUILD_STATIC_LIBS OFF CACHE BOOL "test")
