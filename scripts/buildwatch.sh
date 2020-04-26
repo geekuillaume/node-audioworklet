@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # set -eo pipefail
 
-npm run build
-
-while inotifywait -r -e modify,create,delete,move ./src; do
+while true; do
+    npm run build:debug
+    inotifywait -r -e modify,create,delete,move ./src
     wait 1
-    npm run build
 done
