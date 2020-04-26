@@ -1,0 +1,7 @@
+{
+  "mode": "file",
+  "out": "docs",
+  "externalPattern": "**/node_modules",
+  "excludeExternals": true,
+  "includeDeclarations": true
+}

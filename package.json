@@ -6,6 +6,7 @@
 	"types": "src/index.d.ts",
 	"scripts": {
 		"build": "npm run patch-vendors && cmake-js compile",
+		"build:doc": "typedoc src",
 		"build:debug": "npm run patch-vendors && cmake-js compile -D",
 		"install": "prebuild-install --target 4 -r napi || npm run build",
 		"deploy": "np --no-tests",
@@ -34,7 +35,9 @@
 		"np": "^5.2.1",
 		"prebuild": "^9.1.1",
 		"run-script-os": "^1.0.7",
-		"simple-git": "^1.129.0"
+		"simple-git": "^1.129.0",
+		"typedoc": "^0.17.4",
+		"typescript": "^3.8.3"
 	},
 	"binary": {
 		"napi_versions": [
