@@ -1,8 +1,10 @@
-#include "soundio.h"
+#include <future>
+
+#include "soundio_instream.h"
 
 void read_callback(struct SoundIoInStream *instream, int frame_count_min, int frame_count_max)
 {
-	SoundioInstream *wrap = (SoundioInstream *)instream->userdata;
+	SoundioInstreamWrap *wrap = (SoundioInstreamWrap *)instream->userdata;
 	SoundIoFormat format = instream->format;
 
 	int frames_left = frame_count_max;
@@ -121,23 +123,23 @@ void read_callback(struct SoundIoInStream *instream, int frame_count_min, int fr
 	}
 }
 
-void SoundioInstream::Init(Napi::Env &env, Napi::Object exports)
+void SoundioInstreamWrap::Init(Napi::Env &env, Napi::Object exports)
 {
   Napi::HandleScope scope(env);
   Napi::Function ctor =
     DefineClass(env,
       "SoundioInstream",
       {
-        InstanceMethod("close", &SoundioInstream::close),
-        InstanceMethod("isOpen", &SoundioInstream::isOpen),
+        InstanceMethod("close", &SoundioInstreamWrap::close),
+        InstanceMethod("isOpen", &SoundioInstreamWrap::isOpen),
 
-        InstanceMethod("start", &SoundioInstream::start),
-        InstanceMethod("setPause", &SoundioInstream::setPause),
-        InstanceMethod("getLatency", &SoundioInstream::getLatency),
-        InstanceMethod("setProcessFunction", &SoundioInstream::setProcessFunction),
+        InstanceMethod("start", &SoundioInstreamWrap::start),
+        InstanceMethod("setPause", &SoundioInstreamWrap::setPause),
+        InstanceMethod("getLatency", &SoundioInstreamWrap::getLatency),
+        InstanceMethod("setProcessFunction", &SoundioInstreamWrap::setProcessFunction),
 
-        InstanceMethod("_getExternal", &SoundioInstream::_getExternal),
-        StaticMethod("_setProcessFunctionFromExternal", &SoundioInstream::_setProcessFunctionFromExternal),
+        InstanceMethod("_getExternal", &SoundioInstreamWrap::_getExternal),
+        StaticMethod("_setProcessFunctionFromExternal", &SoundioInstreamWrap::_setProcessFunctionFromExternal),
       });
   constructor = Napi::Persistent(ctor);
   constructor.SuppressDestruct();
@@ -145,10 +147,10 @@ void SoundioInstream::Init(Napi::Env &env, Napi::Object exports)
 	exports.Set("SoundioInstream", ctor);
 }
 
-SoundioInstream::SoundioInstream(
+SoundioInstreamWrap::SoundioInstreamWrap(
 	const Napi::CallbackInfo &info
 ) :
-	Napi::ObjectWrap<SoundioInstream>(info),
+	Napi::ObjectWrap<SoundioInstreamWrap>(info),
 	_processFramefn(nullptr),
 	_instreamFrameSize(0),
 	_configuredInputBufferDuration(0.1),
@@ -211,12 +213,12 @@ SoundioInstream::SoundioInstream(
 	_instream = instream;
 }
 
-SoundioInstream::~SoundioInstream()
+SoundioInstreamWrap::~SoundioInstreamWrap()
 {
   soundio_instream_destroy(_instream);
 }
 
-void SoundioInstream::close(const Napi::CallbackInfo &info)
+void SoundioInstreamWrap::close(const Napi::CallbackInfo &info)
 {
 	if (_instream == nullptr) {
 		throw Napi::Error::New(info.Env(), "The outstream is closed");
@@ -229,12 +231,12 @@ void SoundioInstream::close(const Napi::CallbackInfo &info)
 	_ownRef.Unref();
 }
 
-Napi::Value SoundioInstream::isOpen(const Napi::CallbackInfo &info)
+Napi::Value SoundioInstreamWrap::isOpen(const Napi::CallbackInfo &info)
 {
 	return Napi::Boolean::New(info.Env(), _instream != nullptr);
 }
 
-void SoundioInstream::start(const Napi::CallbackInfo &info)
+void SoundioInstreamWrap::start(const Napi::CallbackInfo &info)
 {
 	if (_instream == nullptr) {
 		throw Napi::Error::New(info.Env(), "Instream closed");
@@ -253,7 +255,7 @@ void SoundioInstream::start(const Napi::CallbackInfo &info)
 	}
 }
 
-void SoundioInstream::setPause(const Napi::CallbackInfo &info)
+void SoundioInstreamWrap::setPause(const Napi::CallbackInfo &info)
 {
 	if (_instream == nullptr) {
 		throw Napi::Error::New(info.Env(), "Instream closed");
@@ -265,7 +267,7 @@ void SoundioInstream::setPause(const Napi::CallbackInfo &info)
 	}
 }
 
-Napi::Value SoundioInstream::getLatency(const Napi::CallbackInfo &info)
+Napi::Value SoundioInstreamWrap::getLatency(const Napi::CallbackInfo &info)
 {
 	if (_instream == nullptr) {
 		throw Napi::Error::New(info.Env(), "Instream closed");
@@ -280,7 +282,7 @@ Napi::Value SoundioInstream::getLatency(const Napi::CallbackInfo &info)
 	}
 }
 
-void SoundioInstream::_setProcessFunction(const Napi::Env &env)
+void SoundioInstreamWrap::_setProcessFunction(const Napi::Env &env)
 {
  	_processfnMutex.lock();
 
@@ -293,7 +295,7 @@ void SoundioInstream::_setProcessFunction(const Napi::Env &env)
 	_processfnMutex.unlock();
 }
 
-void SoundioInstream::setProcessFunction(const Napi::CallbackInfo& info)
+void SoundioInstreamWrap::setProcessFunction(const Napi::CallbackInfo& info)
 {
 	if (info[0].IsEmpty() || !info[0].IsFunction()) {
 		throw Napi::Error::New(info.Env(), "First argument should be the process function");
@@ -304,24 +306,24 @@ void SoundioInstream::setProcessFunction(const Napi::CallbackInfo& info)
 	}
 }
 
-Napi::Value SoundioInstream::_getExternal(const Napi::CallbackInfo& info)
+Napi::Value SoundioInstreamWrap::_getExternal(const Napi::CallbackInfo& info)
 {
 	// we cannot pass an external between multiple nodejs thread so we use an array buffer to pass the pointer to thr SoundioInstream instance
 	// this is a big hack but I haven't found any other way of doing that
 	// if thread are being created / deleted it could also lead to a segfault so be careful to call _setProcessFunctionFromExternal directly after calling _getExternal
 	auto wrappedPointer = Napi::ArrayBuffer::New(info.Env(), sizeof(this));
-	SoundioInstream** dataAddr = reinterpret_cast<SoundioInstream **>(wrappedPointer.Data());
+	SoundioInstreamWrap** dataAddr = reinterpret_cast<SoundioInstreamWrap **>(wrappedPointer.Data());
 	*dataAddr = this;
 	return wrappedPointer;
 }
 
-void SoundioInstream::_setProcessFunctionFromExternal(const Napi::CallbackInfo& info)
+void SoundioInstreamWrap::_setProcessFunctionFromExternal(const Napi::CallbackInfo& info)
 {
 	if (info.Length() != 2 || !info[0].IsArrayBuffer() || !info[1].IsFunction()) {
 		throw Napi::Error::New(info.Env(), "Two arguments should be passed: External Rtaudio instance and process function");
 	}
 
-	SoundioInstream *wrap = *static_cast<SoundioInstream **>(info[0].As<Napi::ArrayBuffer>().Data());
+	SoundioInstreamWrap *wrap = *static_cast<SoundioInstreamWrap **>(info[0].As<Napi::ArrayBuffer>().Data());
 
 	wrap->_processFctRef = Napi::Reference<Napi::Value>::New(info[1], 1);
 	if (wrap->_isStarted) {

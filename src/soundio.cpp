@@ -63,12 +63,10 @@ SoundioWrap::~SoundioWrap()
 	soundio_destroy(_soundio);
 }
 
-Napi::Value SoundioWrap::getDevices(const Napi::CallbackInfo &info)
+void SoundioWrap::refreshDevices(const Napi::CallbackInfo &info)
 {
-	Napi::Array outputDevicesArray;
-	Napi::Array inputDevicesArray;
-	std::vector<SoundIoDevice *> outputDevices;
-	std::vector<SoundIoDevice *> inputDevices;
+	std::vector<SoundIoDevice *> presentOutputDevices;
+	std::vector<SoundIoDevice *> presentInputDevices;
 
 	unsigned int outputDeviceCount = soundio_output_device_count(_soundio);
 	unsigned int inputDeviceCount = soundio_input_device_count(_soundio);
@@ -76,40 +74,86 @@ Napi::Value SoundioWrap::getDevices(const Napi::CallbackInfo &info)
 	for (int i = 0; i < outputDeviceCount; i += 1) {
 		struct SoundIoDevice *device = soundio_get_output_device(_soundio, i);
 		if (!device->probe_error) {
-			outputDevices.push_back(device);
+			presentOutputDevices.push_back(device);
 		}
 	}
 	for (int i = 0; i < inputDeviceCount; i += 1) {
 		struct SoundIoDevice *device = soundio_get_input_device(_soundio, i);
 		if (!device->probe_error) {
-			inputDevices.push_back(device);
+			presentInputDevices.push_back(device);
 		}
 	}
 
-	// Allocate the devices array
-	outputDevicesArray = Napi::Array::New(info.Env(), outputDevices.size());
-	inputDevicesArray = Napi::Array::New(info.Env(), inputDevices.size());
+	// first removing all devices that are not present anymore
+	std::remove_if(_outputDevices.begin(), _outputDevices.end(), [&presentOutputDevices](Napi::ObjectReference& wrapped) {
+		SoundioDeviceWrap *device = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(wrapped.Value());
+		bool shouldBeRemoved = std::none_of(presentOutputDevices.begin(), presentOutputDevices.end(), [&device](SoundIoDevice *presentDevice) {
+			return soundio_device_equal(device->_device, presentDevice);
+		});
+		if (shouldBeRemoved) {
+			wrapped.Unref();
+		}
+		return shouldBeRemoved;
+	});
+	std::remove_if(_inputDevices.begin(), _inputDevices.end(), [&presentInputDevices](Napi::ObjectReference& wrapped) {
+		SoundioDeviceWrap *device = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(wrapped.Value());
+		bool shouldBeRemoved = std::none_of(presentInputDevices.begin(), presentInputDevices.end(), [&device](SoundIoDevice *presentDevice) {
+			return soundio_device_equal(device->_device, presentDevice);
+		});
+		if (shouldBeRemoved) {
+			wrapped.Unref();
+		}
+		return shouldBeRemoved;
+	});
+
+	// then adding devices that are new
+	std::for_each(presentOutputDevices.begin(), presentOutputDevices.end(), [this, &info](SoundIoDevice *presentDevice) {
+		if (std::none_of(_outputDevices.begin(), _outputDevices.end(), [presentDevice](const Napi::ObjectReference& wrapped) {
+			SoundioDeviceWrap *device = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(wrapped.Value());
+			return soundio_device_equal(device->_device, presentDevice);
+		})) {
+			auto newDevice = SoundioDeviceWrap::constructor.Value().New({
+				info.This(),
+				Napi::External<SoundIoDevice>::New(info.Env(), presentDevice),
+				Napi::Boolean::New(info.Env(), true),
+				Napi::Boolean::New(info.Env(), false)
+			});
+			_outputDevices.push_back(Napi::Persistent(newDevice));
+		}
+	});
+	std::for_each(presentInputDevices.begin(), presentInputDevices.end(), [this, &info](SoundIoDevice *presentDevice) {
+		if (std::none_of(_inputDevices.begin(), _inputDevices.end(), [presentDevice](const Napi::ObjectReference& wrapped) {
+			SoundioDeviceWrap *device = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(wrapped.Value());
+			return soundio_device_equal(device->_device, presentDevice);
+		})) {
+			auto newDevice = SoundioDeviceWrap::constructor.New({
+				info.This(),
+				Napi::External<SoundIoDevice>::New(info.Env(), presentDevice),
+				Napi::Boolean::New(info.Env(), false),
+				Napi::Boolean::New(info.Env(), true)
+			});
+			_inputDevices.push_back(Napi::Persistent(newDevice));
+		}
+	});
+}
+
+
+Napi::Value SoundioWrap::getDevices(const Napi::CallbackInfo &info)
+{
+	refreshDevices(info);
+
+	// Converting to Napi::Array
+	auto outputDevicesArray = Napi::Array::New(info.Env(), _outputDevices.size());
+	auto inputDevicesArray = Napi::Array::New(info.Env(), _inputDevices.size());
 
 	// Convert the devices to objects
-	for (unsigned int i = 0; i < outputDevices.size(); i++)
+	for (unsigned int i = 0; i < _outputDevices.size(); i++)
 	{
-		outputDevicesArray[i] = SoundioDevice::constructor.New({
-			info.This(),
-			Napi::External<SoundIoDevice>::New(info.Env(), outputDevices[i]),
-			Napi::Boolean::New(info.Env(), true),
-			Napi::Boolean::New(info.Env(), false)
-		});
-		soundio_device_unref(outputDevices[i]);
+		outputDevicesArray[i] = _outputDevices[i].Value();
 	}
-	for (unsigned int i = 0; i < inputDevices.size(); i++)
+	for (unsigned int i = 0; i < _inputDevices.size(); i++)
 	{
-		inputDevicesArray[i] = SoundioDevice::constructor.New({
-			info.This(),
-			Napi::External<SoundIoDevice>::New(info.Env(), inputDevices[i]),
-			Napi::Boolean::New(info.Env(), false),
-			Napi::Boolean::New(info.Env(), true)
-		});
-		soundio_device_unref(inputDevices[i]);
+		inputDevicesArray[i] = _inputDevices[i].Value();
 	}
 
 	Napi::Object devices = Napi::Object::New(info.Env());
@@ -121,28 +165,36 @@ Napi::Value SoundioWrap::getDevices(const Napi::CallbackInfo &info)
 
 Napi::Value SoundioWrap::getDefaultOutputDevice(const Napi::CallbackInfo &info)
 {
+	refreshDevices(info);
+
 	int defaultDeviceIndex = soundio_default_output_device_index(_soundio);
 	struct SoundIoDevice *device = soundio_get_output_device(_soundio, defaultDeviceIndex);
 
-	return SoundioDevice::constructor.New({
-		info.This(),
-		Napi::External<SoundIoDevice>::New(info.Env(), device),
-		Napi::Boolean::New(info.Env(), true),
-		Napi::Boolean::New(info.Env(), false)
-	});
+	for(std::vector<int>::size_type i = 0; i != _outputDevices.size(); i++) {
+		SoundioDeviceWrap *wrappedDevice = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(_outputDevices[i].Value());
+		if (soundio_device_equal(device, wrappedDevice->_device)) {
+			return _outputDevices[i].Value();
+		}
+	}
+
+	return info.Env().Undefined();
 }
 
 Napi::Value SoundioWrap::getDefaultInputDevice(const Napi::CallbackInfo &info)
 {
+	refreshDevices(info);
+
 	int defaultDeviceIndex = soundio_default_input_device_index(_soundio);
 	struct SoundIoDevice *device = soundio_get_input_device(_soundio, defaultDeviceIndex);
 
-	return SoundioDevice::constructor.New({
-		info.This(),
-		Napi::External<SoundIoDevice>::New(info.Env(), device),
-		Napi::Boolean::New(info.Env(), false),
-		Napi::Boolean::New(info.Env(), true)
-	});
+	for(std::vector<int>::size_type i = 0; i != _inputDevices.size(); i++) {
+		SoundioDeviceWrap *wrappedDevice = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(_inputDevices[i].Value());
+		if (soundio_device_equal(device, wrappedDevice->_device)) {
+			return _inputDevices[i].Value();
+		}
+	}
+
+	return info.Env().Undefined();
 }
 
 Napi::Value SoundioWrap::getApi(const Napi::CallbackInfo &info)
