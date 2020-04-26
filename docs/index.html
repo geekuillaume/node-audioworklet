@@ -1,0 +1,414 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>audioworklet</title>
+	<meta name="description" content="Documentation for audioworklet">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">audioworklet</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1>audioworklet</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#node-audioworklet" id="node-audioworklet" style="color: inherit; text-decoration: none;">
+					<h1>Node Audioworklet</h1>
+				</a>
+				<p>Node Audioworklet is a NodeJS lib exposing a set of function to output audio on an audio card. It&#39;s close to the AudioWorklet interface of WebAudio. It uses <a href="http://libsound.io/">libsoundio</a> to support a wide variety of OS and configuration: Linux (native ALSA, JACK, PulseAudio), Macintosh OS X (CoreAudio and JACK), and Windows (WASAPI). It only handle raw PCM frames that should be set into a Buffer for every frame. You can set the buffer size to precisely time the sound you are emitting.</p>
+				<p>AudioWorklet also can use another file started in a <a href="https://nodejs.org/api/worker_threads.html">NodeJS Worker Thread</a> as the process function to isolate the thread and better manage the memory to prevent stop-the-world Garbage Collection from stopping the thread and cause audio artifacts. You need Node v10 or higher to use this feature.</p>
+				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+					<h2>Installation</h2>
+				</a>
+				<pre><code>npm <span class="hljs-keyword">install</span> <span class="hljs-comment">--save audioworklet</span></code></pre><p>Or</p>
+				<pre><code>yarn <span class="hljs-keyword">add</span><span class="bash"> audioworklet</span></code></pre>
+				<a href="#example" id="example" style="color: inherit; text-decoration: none;">
+					<h2>Example</h2>
+				</a>
+				<a href="#list-devices" id="list-devices" style="color: inherit; text-decoration: none;">
+					<h3>List devices</h3>
+				</a>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> { Soundio } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'audioworklet'</span>);
+
+<span class="hljs-keyword">const</span> soundio = <span class="hljs-keyword">new</span> Soundio();
+
+<span class="hljs-keyword">const</span> logDevice = <span class="hljs-function">(<span class="hljs-params">device</span>) =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'---------------'</span>);
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> prop <span class="hljs-keyword">in</span> device) {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`<span class="hljs-subst">${prop}</span>:`</span>, device[prop]);
+  }
+}
+
+soundio.getDevices().outputDevices.forEach(logDevice);
+soundio.getDevices().inputDevices.forEach(logDevice);
+
+<span class="hljs-built_in">console</span>.log(<span class="hljs-string">'-------'</span>)
+
+<span class="hljs-built_in">console</span>.log(<span class="hljs-string">'default output:'</span>, soundio.getDefaultOutputDevice().name);
+<span class="hljs-built_in">console</span>.log(<span class="hljs-string">'default input:'</span>, soundio.getDefaultInputDevice().name);
+<span class="hljs-built_in">console</span>.log(<span class="hljs-string">'API:'</span>, soundio.getApi());</code></pre>
+				<p>Will output:</p>
+				<pre><code><span class="hljs-string">---------------</span>
+<span class="hljs-attr">name:</span> <span class="hljs-string">Built-in</span> <span class="hljs-string">Audio</span> <span class="hljs-string">Analog</span> <span class="hljs-string">Stereo</span>
+<span class="hljs-attr">id:</span> <span class="hljs-string">alsa_output.pci-0000_00_1f.3.analog-stereo</span>
+<span class="hljs-attr">formats:</span> <span class="hljs-string">[</span>
+   <span class="hljs-number">2</span><span class="hljs-string">,</span>  <span class="hljs-number">3</span><span class="hljs-string">,</span> <span class="hljs-number">4</span><span class="hljs-string">,</span> <span class="hljs-number">15</span><span class="hljs-string">,</span> <span class="hljs-number">16</span><span class="hljs-string">,</span>
+  <span class="hljs-number">11</span><span class="hljs-string">,</span> <span class="hljs-number">12</span><span class="hljs-string">,</span> <span class="hljs-number">7</span><span class="hljs-string">,</span>  <span class="hljs-number">8</span>
+<span class="hljs-string">]</span>
+<span class="hljs-attr">sampleRates:</span> <span class="hljs-string">[</span> <span class="hljs-string">{</span> <span class="hljs-attr">min:</span> <span class="hljs-number">8000</span><span class="hljs-string">,</span> <span class="hljs-attr">max:</span> <span class="hljs-number">5644800</span> <span class="hljs-string">}</span> <span class="hljs-string">]</span>
+<span class="hljs-attr">channelLayouts:</span> <span class="hljs-string">[</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Mono'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">1</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Stereo'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">2</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'2.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">3</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'3.0'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">3</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'3.0 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">3</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'3.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'4.0'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Quad'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Quad (side)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'4.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">5</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.0 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">5</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.0 (side)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">5</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.1 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.0 (side)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.0 (front)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Hexagonal'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.1 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.1 (front)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.0'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.0 (front)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.1 (wide)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.1 (wide) (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Octagonal'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">}</span>
+<span class="hljs-string">]</span>
+<span class="hljs-attr">isInput:</span> <span class="hljs-literal">false</span>
+<span class="hljs-attr">isOutput:</span> <span class="hljs-literal">true</span>
+<span class="hljs-string">---------------</span>
+<span class="hljs-attr">name:</span> <span class="hljs-string">Webcam</span> <span class="hljs-string">C930e</span> <span class="hljs-string">Analog</span> <span class="hljs-string">Stereo</span>
+<span class="hljs-attr">id:</span> <span class="hljs-string">alsa_input.usb-046d_Logitech_Webcam_C930e_1658212E-02.analog-stereo</span>
+<span class="hljs-attr">formats:</span> <span class="hljs-string">[</span>
+   <span class="hljs-number">2</span><span class="hljs-string">,</span>  <span class="hljs-number">3</span><span class="hljs-string">,</span> <span class="hljs-number">4</span><span class="hljs-string">,</span> <span class="hljs-number">15</span><span class="hljs-string">,</span> <span class="hljs-number">16</span><span class="hljs-string">,</span>
+  <span class="hljs-number">11</span><span class="hljs-string">,</span> <span class="hljs-number">12</span><span class="hljs-string">,</span> <span class="hljs-number">7</span><span class="hljs-string">,</span>  <span class="hljs-number">8</span>
+<span class="hljs-string">]</span>
+<span class="hljs-attr">sampleRates:</span> <span class="hljs-string">[</span> <span class="hljs-string">{</span> <span class="hljs-attr">min:</span> <span class="hljs-number">8000</span><span class="hljs-string">,</span> <span class="hljs-attr">max:</span> <span class="hljs-number">5644800</span> <span class="hljs-string">}</span> <span class="hljs-string">]</span>
+<span class="hljs-attr">channelLayouts:</span> <span class="hljs-string">[</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Mono'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">1</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Stereo'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">2</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'2.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">3</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'3.0'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">3</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'3.0 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">3</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'3.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'4.0'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Quad'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Quad (side)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">4</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'4.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">5</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.0 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">5</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.0 (side)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">5</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'5.1 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.0 (side)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.0 (front)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Hexagonal'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">6</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.1 (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'6.1 (front)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.0'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.0 (front)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">7</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.1'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.1 (wide)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'7.1 (wide) (back)'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">},</span>
+  <span class="hljs-string">{</span> <span class="hljs-attr">name:</span> <span class="hljs-string">'Octagonal'</span><span class="hljs-string">,</span> <span class="hljs-attr">channelCount:</span> <span class="hljs-number">8</span> <span class="hljs-string">}</span>
+<span class="hljs-string">]</span>
+<span class="hljs-attr">isInput:</span> <span class="hljs-literal">true</span>
+<span class="hljs-attr">isOutput:</span> <span class="hljs-literal">false</span>
+<span class="hljs-string">-------</span>
+<span class="hljs-attr">default output:</span> <span class="hljs-string">Built-in</span> <span class="hljs-string">Audio</span> <span class="hljs-string">Analog</span> <span class="hljs-string">Stereo</span>
+<span class="hljs-attr">default input:</span> <span class="hljs-string">Webcam</span> <span class="hljs-string">C930e</span> <span class="hljs-string">Analog</span> <span class="hljs-string">Stereo</span>
+<span class="hljs-attr">API:</span> <span class="hljs-string">PulseAudio</span></code></pre>
+				<a href="#play-white-noise" id="play-white-noise" style="color: inherit; text-decoration: none;">
+					<h3>Play white noise</h3>
+				</a>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> { Soundio } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'audioworklet'</span>);
+<span class="hljs-keyword">const</span> soundio = <span class="hljs-keyword">new</span> Soundio();
+
+<span class="hljs-keyword">let</span> streamStatus = <span class="hljs-literal">true</span>;
+
+<span class="hljs-keyword">const</span> processFrame = <span class="hljs-function">(<span class="hljs-params">outputChannels</span>) =&gt;</span> {
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> sample = <span class="hljs-number">0</span>; sample &lt; outputChannels[<span class="hljs-number">0</span>].length; sample++) {
+    outputChannels[<span class="hljs-number">0</span>][sample] = <span class="hljs-built_in">Math</span>.random();
+    outputChannels[<span class="hljs-number">1</span>][sample] = <span class="hljs-built_in">Math</span>.random();
+  }
+
+  <span class="hljs-keyword">return</span> streamStatus;
+}
+
+<span class="hljs-keyword">const</span> device = soundio.getDefaultOutputDevice();
+<span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Opening stream'</span>);
+<span class="hljs-keyword">const</span> outputStream = device.openOutputStream({
+  <span class="hljs-attr">format</span>: Soundio.SoundIoFormatFloat32LE,
+  <span class="hljs-attr">sampleRate</span>: <span class="hljs-number">48000</span>,
+  <span class="hljs-attr">name</span>: <span class="hljs-string">"test test"</span>,
+  <span class="hljs-attr">process</span>: processFrame,
+});
+
+<span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Starting stream'</span>);
+outputStream.start();
+
+setTimeout(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Stopping stream'</span>);
+  <span class="hljs-comment">// streamStatus = false;</span>
+  outputStream.close();
+}, <span class="hljs-number">2000</span>);
+setTimeout(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+  process.exit(<span class="hljs-number">0</span>);
+}, <span class="hljs-number">3000</span>);</code></pre>
+				<a href="#use-another-file-as-audioworklet" id="use-another-file-as-audioworklet" style="color: inherit; text-decoration: none;">
+					<h3>Use another file as AudioWorklet</h3>
+				</a>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">'path'</span>);
+<span class="hljs-keyword">const</span> { Soundio } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'audioworklet'</span>);
+<span class="hljs-keyword">const</span> soundio = <span class="hljs-keyword">new</span> Soundio();
+
+<span class="hljs-keyword">const</span> device = soundio.getDefaultOutputDevice();
+<span class="hljs-keyword">const</span> outputStream = device.openOutputStream();
+
+outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, <span class="hljs-string">'./workers/whitenoise.js'</span>));
+outputStream.start();
+
+setTimeout(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'exiting'</span>);
+  process.exit(<span class="hljs-number">0</span>);
+}, <span class="hljs-number">1000</span>);</code></pre>
+				<p>And in <code>./workers/whitenoise.js</code>:</p>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> {AudioWorkletProcessor} = <span class="hljs-built_in">require</span>(<span class="hljs-string">'../../'</span>);
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WhiteNoiseProcessor</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AudioWorkletProcessor</span> </span>{
+  <span class="hljs-keyword">constructor</span>() {
+    <span class="hljs-keyword">super</span>();
+  }
+
+  process(outputChannels) {
+    outputChannels.forEach(<span class="hljs-function">(<span class="hljs-params">channel</span>) =&gt;</span> {
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> sample = <span class="hljs-number">0</span>; sample &lt; channel.length; sample++) {
+        channel[sample] = <span class="hljs-built_in">Math</span>.random();
+      }
+    })
+
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+  }
+}
+
+<span class="hljs-built_in">module</span>.exports = WhiteNoiseProcessor;</code></pre>
+				<a href="#communicate-with-an-audioworklet" id="communicate-with-an-audioworklet" style="color: inherit; text-decoration: none;">
+					<h3>Communicate with an AudioWorklet</h3>
+				</a>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">'path'</span>);
+<span class="hljs-keyword">const</span> { Soundio } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'audioworklet'</span>);
+<span class="hljs-keyword">const</span> soundio = <span class="hljs-keyword">new</span> Soundio();
+
+<span class="hljs-keyword">const</span> device = soundio.getDefaultOutputDevice();
+<span class="hljs-keyword">const</span> outputStream = device.openOutputStream();
+
+<span class="hljs-keyword">const</span> worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, <span class="hljs-string">'./workers/messages.js'</span>));
+outputStream.start();
+
+setTimeout(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Muting worklet'</span>);
+  worklet.postMessage({
+    <span class="hljs-attr">mute</span>: <span class="hljs-literal">true</span>,
+  });
+}, <span class="hljs-number">1000</span>);
+
+setTimeout(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'exiting'</span>);
+  process.exit(<span class="hljs-number">0</span>);
+}, <span class="hljs-number">2000</span>);</code></pre>
+				<p>And in <code>workers/messages.js</code>:</p>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> {AudioWorkletProcessor} = <span class="hljs-built_in">require</span>(<span class="hljs-string">'audioworklet'</span>);
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WhiteNoiseProcessorWithMessage</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AudioWorkletProcessor</span> </span>{
+  <span class="hljs-keyword">constructor</span>() {
+    <span class="hljs-keyword">super</span>();
+    <span class="hljs-keyword">this</span>.mute = <span class="hljs-literal">false</span>;
+
+    <span class="hljs-keyword">this</span>.port.onmessage = <span class="hljs-keyword">this</span>.handleMessage.bind(<span class="hljs-keyword">this</span>);
+  }
+
+  handleMessage(message) {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Receiving mute status'</span>, message.data.mute);
+    <span class="hljs-keyword">this</span>.mute = message.data.mute;
+  }
+
+  process(outputChannels) {
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.mute) {
+      <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+    }
+    outputChannels.forEach(<span class="hljs-function">(<span class="hljs-params">channel</span>) =&gt;</span> {
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> sample = <span class="hljs-number">0</span>; sample &lt; channel.length; sample++) {
+        channel[sample] = <span class="hljs-built_in">Math</span>.random();
+      }
+    })
+
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+  }
+}
+
+<span class="hljs-built_in">module</span>.exports = WhiteNoiseProcessorWithMessage;</code></pre>
+				<p>The <code>this.port</code> property is a <code>MessagePort</code> and also handle passing a second argument <code>transferList</code> to prevent a data copy of ArrayBuffers. Look at the <a href="https://nodejs.org/api/worker_threads.html#worker_threads_port_postmessage_value_transferlist">documentation</a> for more information.</p>
+				<a href="#development" id="development" style="color: inherit; text-decoration: none;">
+					<h2>Development</h2>
+				</a>
+				<a href="#download-libsoundio" id="download-libsoundio" style="color: inherit; text-decoration: none;">
+					<h3>Download libsoundio</h3>
+				</a>
+				<pre><code>git submodule update <span class="hljs-params">--init</span> <span class="hljs-params">--recursive</span>
+<span class="hljs-keyword">cd</span> vendor/libsoundio</code></pre>
+				<a href="#requirements-for-source-build" id="requirements-for-source-build" style="color: inherit; text-decoration: none;">
+					<h3>Requirements for source build</h3>
+				</a>
+				<p><strong><em>Most regular installs will support prebuilds that are built with each release, this is required if you want to develop with.</em></strong></p>
+				<ul>
+					<li>Node version that support N-API 4 and up (<a href="https://nodejs.org/docs/latest/api/n-api.html#n_api_n_api_version_matrix">N-API Node Version Matrix</a>)</li>
+					<li><a href="http://www.cmake.org/download/">CMake</a></li>
+					<li>A proper C/C++ compiler toolchain of the given platform<ul>
+							<li><strong>Windows</strong>:<ul>
+									<li><a href="https://www.npmjs.com/package/windows-build-tools">Windows build tools</a> NPM package</li>
+								</ul>
+							</li>
+							<li><strong>Unix/Posix</strong>:<ul>
+									<li>Clang or GCC</li>
+									<li>Ninja or Make (Ninja will be picked if both present)</li>
+									<li>Alsa and/or Pulseaudio libs (on ubuntu, it can be installed with <code>apt-get install -y libasound2-dev libpulse-dev</code>)</li>
+								</ul>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<a href="#legal" id="legal" style="color: inherit; text-decoration: none;">
+					<h2>Legal</h2>
+				</a>
+				<p>This project is licensed under the MIT license.</p>
+				<p>It is based on the <a href="https://github.com/almogh52/audify">Audify</a> project from Almogh52 also released under MIT license.</p>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-enum">
+						<a href="enums/soundioaudioformat.html" class="tsd-kind-icon">Soundio<wbr>Audio<wbr>Format</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/audioworkletprocessor.html" class="tsd-kind-icon">Audio<wbr>Worklet<wbr>Processor</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/soundio.html" class="tsd-kind-icon">Soundio</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/soundiodevice.html" class="tsd-kind-icon">Soundio<wbr>Device</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/soundioinputstream.html" class="tsd-kind-icon">Soundio<wbr>Input<wbr>Stream</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/soundiooutputstream.html" class="tsd-kind-icon">Soundio<wbr>Output<wbr>Stream</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/soundiodevicesresponse.html" class="tsd-kind-icon">Soundio<wbr>Devices<wbr>Response</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/streamparams.html" class="tsd-kind-icon">Stream<wbr>Params</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="globals.html#typedarray" class="tsd-kind-icon">Typed<wbr>Array</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>

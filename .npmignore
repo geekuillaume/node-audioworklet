@@ -86,3 +86,4 @@ prebuilds
 .github
 /vendor/libsoundio/test
 /vendor/libsoundio/doc
+docs
