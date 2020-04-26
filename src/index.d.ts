@@ -74,6 +74,9 @@ export declare class Soundio {
 	getDevices(): SoundioDevicesResponse;
 	getDefaultInputDevice(): SoundioDevice;
 	getDefaultOutputDevice(): SoundioDevice;
+
+	/** Will return true if some devices have changed */
+	refreshDevices(): boolean;
 }
 
 export declare class SoundioDevice {

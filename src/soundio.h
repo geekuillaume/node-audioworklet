@@ -25,10 +25,10 @@ public:
 	Napi::Value getDefaultOutputDevice(const Napi::CallbackInfo& info);
 
 	Napi::Value getApi(const Napi::CallbackInfo& info);
-
+	Napi::Value refreshDevices(const Napi::CallbackInfo& info);
 
 private:
-	void refreshDevices(const Napi::CallbackInfo& info);
+	bool _refreshDevices(const Napi::CallbackInfo& info);
 
 	inline static Napi::FunctionReference constructor;
 
