@@ -23,7 +23,6 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 	struct SoundIoChannelArea *areas;
 	double outLatency;
 	int err;
-	// wrap->_processfnMutex.lock();
 
 	while (frames_left >= outstreamFrameSize)
 	{
@@ -45,6 +44,7 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 			break;
 
 		if (wrap->_processFramefn) {
+			wrap->_processfnMutex.lock();
 
 			auto processStatus = wrap->_processFramefn.BlockingCall([format, &jsBuffer, frame_count, &processPromise](Napi::Env env, Napi::Function callback) {
 				size_t bytes_per_sample = soundio_get_bytes_per_sample(format);
@@ -106,6 +106,7 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 			if (processFuture.get() == false) {
 				soundio_outstream_pause(outstream, true);
 			}
+			wrap->_processfnMutex.unlock();
 		}
 
 		for (int channel = 0; channel < outstream->layout.channel_count; channel += 1) {
@@ -125,10 +126,9 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 	}
 }
 
-void SoundioOutstreamWrap::Init(Napi::Env &env, Napi::Object exports)
+void SoundioOutstreamWrap::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *registry)
 {
-  Napi::HandleScope scope(env);
-  Napi::Function ctor =
+  Napi::Function ctor_func =
     DefineClass(env,
       "SoundioOutstream",
       {
@@ -144,21 +144,25 @@ void SoundioOutstreamWrap::Init(Napi::Env &env, Napi::Object exports)
 
         InstanceMethod("_getExternal", &SoundioOutstreamWrap::_getExternal),
         StaticMethod("_setProcessFunctionFromExternal", &SoundioOutstreamWrap::_setProcessFunctionFromExternal),
-      });
-  constructor = Napi::Persistent(ctor);
-  constructor.SuppressDestruct();
+      }, registry);
 
-	exports.Set("SoundioOutstream", ctor);
+  // Set the class's ctor function as a persistent object to keep it in memory
+  registry->SoundioOutstreamConstructor = Napi::Persistent(ctor_func);
+  registry->SoundioOutstreamConstructor.SuppressDestruct();
+
+	exports.Set("SoundioOutstream", ctor_func);
 }
 
 SoundioOutstreamWrap::SoundioOutstreamWrap(
 	const Napi::CallbackInfo &info
 ) :
 	Napi::ObjectWrap<SoundioOutstreamWrap>(info),
-	_processFramefn(nullptr),
+	_processFramefn(),
 	_outstreamFrameSize(0),
-	_configuredOutputBufferDuration(0.1)
+	_configuredOutputBufferDuration(0.1),
+	_processFctRef()
 {
+	registry = static_cast<ClassRegistry *>(info.Data());
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This());
 	_parentDeviceRef = Napi::Reference<Napi::Value>::New(info[0], 1);
   _device = info[1].As<Napi::External<SoundIoDevice>>().Data();
@@ -252,8 +256,11 @@ void SoundioOutstreamWrap::start(const Napi::CallbackInfo &info)
 	_ownRef.Ref();
 
 	if (!_processFctRef.IsEmpty()) {
+	 	_processfnMutex.lock();
 		_setProcessFunction(info.Env());
+	 	_processfnMutex.unlock();
 	}
+
 
 	int err = soundio_outstream_start(_outstream);
 	if (err) {
@@ -306,15 +313,17 @@ Napi::Value SoundioOutstreamWrap::getLatency(const Napi::CallbackInfo &info)
 
 void SoundioOutstreamWrap::_setProcessFunction(const Napi::Env &env)
 {
- 	_processfnMutex.lock();
-
-	_processFramefn = Napi::ThreadSafeFunction::New(env, _processFctRef.Value().As<Napi::Function>(), "soundioProcessFrameCallback", 0, 1, [this](Napi::Env) {
-		// prevent a segfault on exit when the write thread want to access a non-existing threadsafefunction
-		_processFramefn = nullptr;
+	_processFramefn = Napi::ThreadSafeFunction::New(
+		env,
+		_processFctRef.Value().As<Napi::Function>(),
+		"soundioProcessFrameCallback",
+		0,
+		1,
+		[this](Napi::Env) {
+			// prevent a segfault on exit when the write thread want to access a non-existing threadsafefunction
+			_processFramefn = nullptr;
 	});
 	_processFctRef.Unref();
-
-	_processfnMutex.unlock();
 }
 
 void SoundioOutstreamWrap::setProcessFunction(const Napi::CallbackInfo& info)
@@ -322,10 +331,14 @@ void SoundioOutstreamWrap::setProcessFunction(const Napi::CallbackInfo& info)
 	if (info[0].IsEmpty() || !info[0].IsFunction()) {
 		throw Napi::Error::New(info.Env(), "First argument should be the process function");
 	}
+ 	_processfnMutex.lock();
+
 	_processFctRef = Napi::Reference<Napi::Value>::New(info[0], 1);
 	if (_isStarted) {
 		_setProcessFunction(info.Env());
 	}
+
+ 	_processfnMutex.unlock();
 }
 
 Napi::Value SoundioOutstreamWrap::_getExternal(const Napi::CallbackInfo& info)
@@ -347,9 +360,13 @@ void SoundioOutstreamWrap::_setProcessFunctionFromExternal(const Napi::CallbackI
 
 	SoundioOutstreamWrap *wrap = *static_cast<SoundioOutstreamWrap **>(info[0].As<Napi::ArrayBuffer>().Data());
 
+ 	wrap->_processfnMutex.lock();
+
 	wrap->_processFctRef = Napi::Reference<Napi::Value>::New(info[1], 1);
 	if (wrap->_isStarted) {
 		wrap->_setProcessFunction(info.Env());
 	}
+
+	wrap->_processfnMutex.unlock();
 }
 

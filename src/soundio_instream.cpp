@@ -123,10 +123,9 @@ void read_callback(struct SoundIoInStream *instream, int frame_count_min, int fr
 	}
 }
 
-void SoundioInstreamWrap::Init(Napi::Env &env, Napi::Object exports)
+void SoundioInstreamWrap::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *registry)
 {
-  Napi::HandleScope scope(env);
-  Napi::Function ctor =
+  Napi::Function ctor_func =
     DefineClass(env,
       "SoundioInstream",
       {
@@ -140,11 +139,13 @@ void SoundioInstreamWrap::Init(Napi::Env &env, Napi::Object exports)
 
         InstanceMethod("_getExternal", &SoundioInstreamWrap::_getExternal),
         StaticMethod("_setProcessFunctionFromExternal", &SoundioInstreamWrap::_setProcessFunctionFromExternal),
-      });
-  constructor = Napi::Persistent(ctor);
-  constructor.SuppressDestruct();
+      }, registry);
 
-	exports.Set("SoundioInstream", ctor);
+  // Set the class's ctor function as a persistent object to keep it in memory
+  registry->SoundioInstreamConstructor = Napi::Persistent(ctor_func);
+  registry->SoundioInstreamConstructor.SuppressDestruct();
+
+	exports.Set("SoundioInstream", ctor_func);
 }
 
 SoundioInstreamWrap::SoundioInstreamWrap(
@@ -157,6 +158,7 @@ SoundioInstreamWrap::SoundioInstreamWrap(
 	_isStarted(false),
 	_processFctRef()
 {
+	registry = static_cast<ClassRegistry *>(info.Data());
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This()); // this is used to prevent the GC to collect this object while a stream is running
 	_parentDeviceRef = Napi::Reference<Napi::Value>::New(info[0], 1);
   _device = info[1].As<Napi::External<SoundIoDevice>>().Data();

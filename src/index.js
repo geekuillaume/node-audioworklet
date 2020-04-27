@@ -5,7 +5,7 @@ if (process.browser) {
 	const {attachProcessFunctionFromWorker, AudioWorkletProcessor} = require('./worker');
 
 	SoundioOutstream.prototype.attachProcessFunctionFromWorker = attachProcessFunctionFromWorker('outstream');
-	SoundioOutstream.prototype.attachProcessFunctionFromWorker = attachProcessFunctionFromWorker('instream');
+	SoundioInstream.prototype.attachProcessFunctionFromWorker = attachProcessFunctionFromWorker('instream');
 
 	exports = module.exports = {
 		Soundio,

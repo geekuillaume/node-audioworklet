@@ -1,5 +1,4 @@
 // this is executed from the worker.js file and used to initiate the context for the audioworklet worker
-
 const {
   workerData,
 } = require('worker_threads');

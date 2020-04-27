@@ -12,11 +12,13 @@
 #include "./soundio_instream.h"
 #include "./soundio_outstream.h"
 #include "./soundio_device.h"
+#include "class_registry.h"
 
 class SoundioWrap : public Napi::ObjectWrap<SoundioWrap>
 {
 public:
-	static Napi::Object Init(Napi::Env env, Napi::Object exports);
+	static void Init(Napi::Env& env, Napi::Object exports, ClassRegistry *registry);
+
 	SoundioWrap(const Napi::CallbackInfo &info);
 	~SoundioWrap();
 
@@ -36,5 +38,6 @@ private:
 	Napi::Reference<Napi::Value> _ownRef;
 	std::vector<Napi::ObjectReference> _outputDevices;
 	std::vector<Napi::ObjectReference> _inputDevices;
+	ClassRegistry *registry;
 };
 

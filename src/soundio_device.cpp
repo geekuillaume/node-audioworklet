@@ -2,10 +2,9 @@
 #include "soundio_outstream.h"
 #include "soundio_instream.h"
 
-void SoundioDeviceWrap::Init(Napi::Env &env, Napi::Object exports)
+void SoundioDeviceWrap::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *registry)
 {
-  Napi::HandleScope scope(env);
-  Napi::Function ctor =
+  Napi::Function ctor_func =
     DefineClass(env,
       "SoundioDevice",
       {
@@ -19,11 +18,13 @@ void SoundioDeviceWrap::Init(Napi::Env &env, Napi::Object exports)
 
         InstanceMethod("openOutputStream", &SoundioDeviceWrap::openOutputStream),
         InstanceMethod("openInputStream", &SoundioDeviceWrap::openInputStream),
-      });
-  constructor = Napi::Persistent(ctor);
-  constructor.SuppressDestruct();
+      }, registry);
 
-  exports.Set("SoundioDevice", ctor);
+  // Set the class's ctor function as a persistent object to keep it in memory
+  registry->SoundioDeviceConstructor = Napi::Persistent(ctor_func);
+  registry->SoundioDeviceConstructor.SuppressDestruct();
+
+  exports.Set("SoundioDevice", ctor_func);
 }
 
 SoundioDeviceWrap::SoundioDeviceWrap(
@@ -31,7 +32,7 @@ SoundioDeviceWrap::SoundioDeviceWrap(
 ) :
 	Napi::ObjectWrap<SoundioDeviceWrap>(info)
 {
-	_ownRef = Napi::Reference<Napi::Value>::New(info.This());
+	registry = static_cast<ClassRegistry *>(info.Data());
   _parentSoundioRef = Napi::Reference<Napi::Value>::New(info[0], 1); // this is used to prevent the GC to collect the parent soundio object while a device is still accessible
   _device = info[1].As<Napi::External<SoundIoDevice>>().Data();
 
@@ -107,8 +108,7 @@ Napi::Value SoundioDeviceWrap::openOutputStream(const Napi::CallbackInfo &info)
   if (!_isOutput) {
     throw Napi::Error::New(info.Env(), "This is not an output device");
   }
-
-  return SoundioOutstreamWrap::constructor.New({
+  return registry->SoundioOutstreamConstructor.New({
     info.This(),
     Napi::External<SoundIoDevice>::New(info.Env(), _device),
     info[0]
@@ -121,7 +121,7 @@ Napi::Value SoundioDeviceWrap::openInputStream(const Napi::CallbackInfo &info)
     throw Napi::Error::New(info.Env(), "This is not an input device");
   }
 
-  return SoundioInstreamWrap::constructor.New({
+  return registry->SoundioInstreamConstructor.New({
     info.This(),
     Napi::External<SoundIoDevice>::New(info.Env(), _device),
     info[0]

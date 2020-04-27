@@ -3,7 +3,7 @@
 // #include <bits/stdc++.h>
 // #include <sys/time.h>
 
-Napi::Object SoundioWrap::Init(Napi::Env env, Napi::Object exports)
+void SoundioWrap::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *registry)
 {
 	// Define the class and get it's ctor function
 	Napi::Function ctor_func = DefineClass(env, "Soundio", {
@@ -28,15 +28,14 @@ Napi::Object SoundioWrap::Init(Napi::Env env, Napi::Object exports)
 			StaticValue("SoundIoFormatFloat32BE", Napi::Number::New(env, SoundIoFormatFloat32BE)), ///< Float 32 bit Big Endian, Range -1.0 to 1.0
 			StaticValue("SoundIoFormatFloat64LE", Napi::Number::New(env, SoundIoFormatFloat64LE)), ///< Float 64 bit Little Endian, Range -1.0 to 1.0
 			StaticValue("SoundIoFormatFloat64BE", Napi::Number::New(env, SoundIoFormatFloat64BE)), ///< Float 64 bit Big Endian, Range -1.0 to 1.0
-	});
+	}, registry);
 
-	// Set the class's ctor function as a persistent object to keep it in memory
-	constructor = Napi::Persistent(ctor_func);
-	constructor.SuppressDestruct();
+  // Set the class's ctor function as a persistent object to keep it in memory
+  registry->SoundioConstructor = Napi::Persistent(ctor_func);
+  registry->SoundioConstructor.SuppressDestruct();
 
 	// Export the ctor
 	exports.Set("Soundio", ctor_func);
-	return exports;
 }
 
 SoundioWrap::SoundioWrap(
@@ -44,6 +43,7 @@ SoundioWrap::SoundioWrap(
 ) :
 	Napi::ObjectWrap<SoundioWrap>(info)
 {
+	registry = static_cast<ClassRegistry *>(info.Data());
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This()); // this is used to prevent the GC to collect this object while a stream is running
 	int err;
 
@@ -121,7 +121,7 @@ bool SoundioWrap::_refreshDevices(const Napi::CallbackInfo &info)
 			SoundioDeviceWrap *device = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(wrapped.Value());
 			return soundio_device_equal(device->_device, presentDevice);
 		})) {
-			auto newDevice = SoundioDeviceWrap::constructor.Value().New({
+			auto newDevice = registry->SoundioDeviceConstructor.Value().New({
 				info.This(),
 				Napi::External<SoundIoDevice>::New(info.Env(), presentDevice),
 				Napi::Boolean::New(info.Env(), true),
@@ -136,7 +136,7 @@ bool SoundioWrap::_refreshDevices(const Napi::CallbackInfo &info)
 			SoundioDeviceWrap *device = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(wrapped.Value());
 			return soundio_device_equal(device->_device, presentDevice);
 		})) {
-			auto newDevice = SoundioDeviceWrap::constructor.New({
+			auto newDevice = registry->SoundioDeviceConstructor.Value().New({
 				info.This(),
 				Napi::External<SoundIoDevice>::New(info.Env(), presentDevice),
 				Napi::Boolean::New(info.Env(), false),

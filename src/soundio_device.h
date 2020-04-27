@@ -2,14 +2,15 @@
 
 #include <soundio/soundio.h>
 #include <napi.h>
+#include "class_registry.h"
 
 class SoundioDeviceWrap : public Napi::ObjectWrap<SoundioDeviceWrap>
 {
 	public:
+		static void Init(Napi::Env& env, Napi::Object exports, ClassRegistry *registry);
+
 		SoundioDeviceWrap(const Napi::CallbackInfo &info);
 		~SoundioDeviceWrap();
-		inline static Napi::FunctionReference constructor;
-		static void Init(Napi::Env& env, Napi::Object exports);
 
 		Napi::Value getName(const Napi::CallbackInfo& info);
 		Napi::Value getId(const Napi::CallbackInfo& info);
@@ -27,7 +28,7 @@ class SoundioDeviceWrap : public Napi::ObjectWrap<SoundioDeviceWrap>
 	private:
 		bool _isInput;
 		bool _isOutput;
-		Napi::Reference<Napi::Value> _ownRef;
 		Napi::Reference<Napi::Value> _parentSoundioRef;
+		ClassRegistry *registry;
 };
 
