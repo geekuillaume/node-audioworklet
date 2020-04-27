@@ -44,7 +44,6 @@ interface StreamParams {
 	frameSize?: number;
 
 	name?: string;
-	deviceId?: number;
 	process?: ((inputOrOutputChannels: TypedArray[]) => boolean);
 	bufferDuration?: number;
 }
