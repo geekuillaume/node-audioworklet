@@ -88,11 +88,13 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 
 			if ( processStatus != napi_ok )
 			{
+				wrap->_processfnMutex.unlock();
 				break;
 			} else {
 				// struct timespec start, end;
 				// clock_gettime(CLOCK_MONOTONIC, &start);
 				processFuture.wait();
+				wrap->_processfnMutex.unlock();
 				// clock_gettime(CLOCK_MONOTONIC, &end);
 
 				// double time_taken;
@@ -106,7 +108,6 @@ void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int
 			if (processFuture.get() == false) {
 				soundio_outstream_pause(outstream, true);
 			}
-			wrap->_processfnMutex.unlock();
 		}
 
 		for (int channel = 0; channel < outstream->layout.channel_count; channel += 1) {
