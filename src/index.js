@@ -14,6 +14,7 @@ if (process.browser) {
 	exports = module.exports = {
 		Soundio,
 		SoundioOutstream,
+		SoundioInstream,
 		AudioWorkletProcessor,
 	};
 }
