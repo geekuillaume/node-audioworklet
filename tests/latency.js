@@ -20,33 +20,37 @@ const processFrame = (outputChannels) => {
   return streamStatus;
 }
 
-const device = soundio.getDefaultOutputDevice();
-console.log('Opening stream');
-const outputStream = device.openOutputStream({
-  format: Soundio.SoundIoFormatFloat32LE,
-  process: processFrame,
-});
+const main = async () => {
+  await soundio.refreshDevices();
+  const device = soundio.getDefaultOutputDevice();
+  console.log('Opening stream');
+  const outputStream = device.openOutputStream({
+    format: Soundio.SoundIoFormatFloat32LE,
+    process: processFrame,
+  });
 
-console.log('Starting stream');
-outputStream.start();
+  console.log('Starting stream');
+  outputStream.start();
 
-const triggerBeep = () => {
-  currentPitch = pitch;
-  console.log(`Latency: ${outputStream.getLatency()}s`);
-  console.log('Beep');
+  const triggerBeep = () => {
+    currentPitch = pitch;
+    console.log(`Latency: ${outputStream.getLatency()}s`);
+    console.log('Beep');
+    setTimeout(() => {
+      console.log('End beep');
+      currentPitch = 0;
+      setTimeout(triggerBeep, 1000);
+    }, 1000);
+  }
+
+  setTimeout(triggerBeep, 500);
+
   setTimeout(() => {
-    console.log('End beep');
-    currentPitch = 0;
-    setTimeout(triggerBeep, 1000);
-  }, 1000);
+    console.log('Stopping stream');
+    streamStatus = false;
+    setTimeout(() => {
+      process.exit(0);
+    }, 1000);
+  }, 10000);
 }
-
-setTimeout(triggerBeep, 500);
-
-setTimeout(() => {
-  console.log('Stopping stream');
-  streamStatus = false;
-  setTimeout(() => {
-    process.exit(0);
-  }, 1000);
-}, 10000);
+main();

@@ -27,14 +27,24 @@ public:
 	Napi::Value getDefaultOutputDevice(const Napi::CallbackInfo& info);
 
 	Napi::Value getApi(const Napi::CallbackInfo& info);
-	Napi::Value refreshDevices(const Napi::CallbackInfo& info);
+	Napi::Value refreshDevicesCb(const Napi::CallbackInfo& info);
 
-private:
+	std::mutex devicesInfoLock;
+	SoundIo	*_soundio;
+
+	std::vector<SoundIoDevice *> rawInputDevices;
+	std::vector<SoundIoDevice *> rawOutputDevices;
+
+	SoundIoDevice *defaultOutputDevice;
+	SoundIoDevice *defaultInputDevice;
+
 	bool _refreshDevices(const Napi::CallbackInfo& info);
+	// this is used to prevent accessing to devices before initializing them with refreshDevices()
+	bool hasBeenInitialized = false;
+private:
 
 	inline static Napi::FunctionReference constructor;
 
-	SoundIo	*_soundio;
 	Napi::Reference<Napi::Value> _ownRef;
 	std::vector<Napi::ObjectReference> _outputDevices;
 	std::vector<Napi::ObjectReference> _inputDevices;

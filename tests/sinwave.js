@@ -18,21 +18,26 @@ const processFrame = (outputChannels) => {
   return streamStatus;
 }
 
-const device = soundio.getDefaultOutputDevice();
-console.log('Opening stream');
-const outputStream = device.openOutputStream({
-  format: Soundio.SoundIoFormatFloat32LE,
-  process: processFrame,
-  sampleRate: 48000,
-});
+const main = async () => {
+  await soundio.refreshDevices();
 
-console.log('Starting stream');
-outputStream.start();
+  const device = soundio.getDefaultOutputDevice();
+  console.log('Opening stream');
+  const outputStream = device.openOutputStream({
+    format: Soundio.SoundIoFormatFloat32LE,
+    process: processFrame,
+    sampleRate: 48000,
+  });
 
-setTimeout(() => {
-  console.log('Stopping stream');
-  streamStatus = false;
-}, 2000);
-setTimeout(() => {
-  process.exit(0);
-}, 3000);
+  console.log('Starting stream');
+  outputStream.start();
+
+  setTimeout(() => {
+    console.log('Stopping stream');
+    streamStatus = false;
+  }, 2000);
+  setTimeout(() => {
+    process.exit(0);
+  }, 3000);
+}
+main();

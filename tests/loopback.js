@@ -1,7 +1,9 @@
 const { Soundio } = require('../');
 const soundio = new Soundio();
 
-const main = () => {
+const main = async () => {
+  await soundio.refreshDevices();
+
   const inDevice = soundio.getDefaultInputDevice();
   const outDevice = soundio.getDefaultOutputDevice();
   console.log(`Recording from ${inDevice.name} and sending to ${outDevice.name}`);

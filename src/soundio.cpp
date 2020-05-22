@@ -1,4 +1,5 @@
 #include "soundio.h"
+#include "./soundio_refresh_device_work.h"
 
 // #include <bits/stdc++.h>
 // #include <sys/time.h>
@@ -12,7 +13,7 @@ void SoundioWrap::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *regi
 			InstanceMethod("getDevices", &SoundioWrap::getDevices),
 			InstanceMethod("getDefaultInputDevice", &SoundioWrap::getDefaultInputDevice),
 			InstanceMethod("getDefaultOutputDevice", &SoundioWrap::getDefaultOutputDevice),
-			InstanceMethod("refreshDevices", &SoundioWrap::refreshDevices),
+			InstanceMethod("refreshDevicesCb", &SoundioWrap::refreshDevicesCb),
 
 			StaticValue("SoundIoFormatS8", Napi::Number::New(env, SoundIoFormatS8)),        ///< Signed 8 bit
 			StaticValue("SoundIoFormatU8", Napi::Number::New(env, SoundIoFormatU8)),        ///< Unsigned 8 bit
@@ -63,33 +64,24 @@ SoundioWrap::~SoundioWrap()
 	soundio_destroy(_soundio);
 }
 
-Napi::Value SoundioWrap::refreshDevices(const Napi::CallbackInfo &info) {
-	return Napi::Boolean::New(info.Env(), _refreshDevices(info));
+Napi::Value SoundioWrap::refreshDevicesCb(const Napi::CallbackInfo &info) {
+	Napi::Function cb = info[0].As<Napi::Function>();
+
+	RefreshDeviceWorker *wk = new RefreshDeviceWorker(cb, this);
+	wk->Queue();
+	return info.Env().Undefined();
 }
 
 bool SoundioWrap::_refreshDevices(const Napi::CallbackInfo &info)
 {
-	soundio_flush_events(_soundio);
+	if (!hasBeenInitialized) {
+		throw Napi::Error::New(info.Env(), "You need to refresh the devices first with refreshDevices()");
+	}
+	devicesInfoLock.lock();
 	bool hasChanged = false;
 
-	std::vector<SoundIoDevice *> presentOutputDevices;
-	std::vector<SoundIoDevice *> presentInputDevices;
-
-	unsigned int outputDeviceCount = soundio_output_device_count(_soundio);
-	unsigned int inputDeviceCount = soundio_input_device_count(_soundio);
-
-	for (int i = 0; i < outputDeviceCount; i += 1) {
-		struct SoundIoDevice *device = soundio_get_output_device(_soundio, i);
-		if (!device->probe_error) {
-			presentOutputDevices.push_back(device);
-		}
-	}
-	for (int i = 0; i < inputDeviceCount; i += 1) {
-		struct SoundIoDevice *device = soundio_get_input_device(_soundio, i);
-		if (!device->probe_error) {
-			presentInputDevices.push_back(device);
-		}
-	}
+	std::vector<SoundIoDevice *> presentOutputDevices = this->rawOutputDevices;
+	std::vector<SoundIoDevice *> presentInputDevices = this->rawInputDevices;
 
 	// first removing all devices that are not present anymore
 	std::remove_if(_outputDevices.begin(), _outputDevices.end(), [&presentOutputDevices, &hasChanged](Napi::ObjectReference& wrapped) {
@@ -146,6 +138,7 @@ bool SoundioWrap::_refreshDevices(const Napi::CallbackInfo &info)
 			_inputDevices.push_back(Napi::Persistent(newDevice));
 		}
 	});
+	devicesInfoLock.unlock();
 
 	return hasChanged;
 }
@@ -180,12 +173,13 @@ Napi::Value SoundioWrap::getDefaultOutputDevice(const Napi::CallbackInfo &info)
 {
 	_refreshDevices(info);
 
-	int defaultDeviceIndex = soundio_default_output_device_index(_soundio);
-	struct SoundIoDevice *device = soundio_get_output_device(_soundio, defaultDeviceIndex);
+	if (defaultOutputDevice == nullptr) {
+		return info.Env().Undefined();
+	}
 
 	for(std::vector<int>::size_type i = 0; i != _outputDevices.size(); i++) {
 		SoundioDeviceWrap *wrappedDevice = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(_outputDevices[i].Value());
-		if (soundio_device_equal(device, wrappedDevice->_device)) {
+		if (soundio_device_equal(defaultOutputDevice, wrappedDevice->_device)) {
 			return _outputDevices[i].Value();
 		}
 	}
@@ -197,12 +191,13 @@ Napi::Value SoundioWrap::getDefaultInputDevice(const Napi::CallbackInfo &info)
 {
 	_refreshDevices(info);
 
-	int defaultDeviceIndex = soundio_default_input_device_index(_soundio);
-	struct SoundIoDevice *device = soundio_get_input_device(_soundio, defaultDeviceIndex);
+	if (defaultInputDevice == nullptr) {
+		return info.Env().Undefined();
+	}
 
 	for(std::vector<int>::size_type i = 0; i != _inputDevices.size(); i++) {
 		SoundioDeviceWrap *wrappedDevice = Napi::ObjectWrap<SoundioDeviceWrap>::Unwrap(_inputDevices[i].Value());
-		if (soundio_device_equal(device, wrappedDevice->_device)) {
+		if (soundio_device_equal(defaultInputDevice, wrappedDevice->_device)) {
 			return _inputDevices[i].Value();
 		}
 	}

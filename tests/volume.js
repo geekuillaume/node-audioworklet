@@ -19,32 +19,37 @@ const processFrame = (outputChannels) => {
   return streamStatus;
 }
 
-const device = soundio.getDefaultOutputDevice();
-console.log('Opening stream');
-const outputStream = device.openOutputStream({
-  format: Soundio.SoundIoFormatFloat32LE,
-  process: processFrame,
-});
+const main = async () => {
+  await soundio.refreshDevices();
 
-console.log('Starting stream');
-outputStream.start();
+  const device = soundio.getDefaultOutputDevice();
+  console.log('Opening stream');
+  const outputStream = device.openOutputStream({
+    format: Soundio.SoundIoFormatFloat32LE,
+    process: processFrame,
+  });
 
-const triggerVolumeDown = () => {
-  console.log('Volume down');
-  outputStream.setVolume(0.5);
+  console.log('Starting stream');
+  outputStream.start();
+
+  const triggerVolumeDown = () => {
+    console.log('Volume down');
+    outputStream.setVolume(0.5);
+    setTimeout(() => {
+      console.log('Volume up');
+      outputStream.setVolume(1);
+      setTimeout(triggerVolumeDown, 1000);
+    }, 1000);
+  }
+
+  setTimeout(triggerVolumeDown, 500);
+
   setTimeout(() => {
-    console.log('Volume up');
-    outputStream.setVolume(1);
-    setTimeout(triggerVolumeDown, 1000);
-  }, 1000);
+    console.log('Stopping stream');
+    streamStatus = false;
+    setTimeout(() => {
+      process.exit(0);
+    }, 1000);
+  }, 10000);
 }
-
-setTimeout(triggerVolumeDown, 500);
-
-setTimeout(() => {
-  console.log('Stopping stream');
-  streamStatus = false;
-  setTimeout(() => {
-    process.exit(0);
-  }, 1000);
-}, 10000);
+main();
