@@ -32,14 +32,18 @@ const logDevice = (device) => {
   }
 }
 
-soundio.getDevices().outputDevices.forEach(logDevice);
-soundio.getDevices().inputDevices.forEach(logDevice);
+(async () => {
+  await soundio.refreshDevices();
 
-console.log('-------')
+  soundio.getDevices().outputDevices.forEach(logDevice);
+  soundio.getDevices().inputDevices.forEach(logDevice);
 
-console.log('default output:', soundio.getDefaultOutputDevice().name);
-console.log('default input:', soundio.getDefaultInputDevice().name);
-console.log('API:', soundio.getApi());
+  console.log('-------')
+
+  console.log('default output:', soundio.getDefaultOutputDevice().name);
+  console.log('default input:', soundio.getDefaultInputDevice().name);
+  console.log('API:', soundio.getApi());
+})()
 ```
 
 Will output:
@@ -143,27 +147,30 @@ const processFrame = (outputChannels) => {
 
   return streamStatus;
 }
+(async () => {
+  await soundio.refreshDevices();
 
-const device = soundio.getDefaultOutputDevice();
-console.log('Opening stream');
-const outputStream = device.openOutputStream({
-  format: Soundio.SoundIoFormatFloat32LE,
-  sampleRate: 48000,
-  name: "test test",
-  process: processFrame,
-});
+  const device = soundio.getDefaultOutputDevice();
+  console.log('Opening stream');
+  const outputStream = device.openOutputStream({
+    format: Soundio.SoundIoFormatFloat32LE,
+    sampleRate: 48000,
+    name: "test test",
+    process: processFrame,
+  });
 
-console.log('Starting stream');
-outputStream.start();
+  console.log('Starting stream');
+  outputStream.start();
 
-setTimeout(() => {
-  console.log('Stopping stream');
-  // streamStatus = false;
-  outputStream.close();
-}, 2000);
-setTimeout(() => {
-  process.exit(0);
-}, 3000);
+  setTimeout(() => {
+    console.log('Stopping stream');
+    // streamStatus = false;
+    outputStream.close();
+  }, 2000);
+  setTimeout(() => {
+    process.exit(0);
+  }, 3000);
+})()
 ```
 
 ### Use another file as AudioWorklet
@@ -173,16 +180,21 @@ const path = require('path');
 const { Soundio } = require('audioworklet');
 const soundio = new Soundio();
 
-const device = soundio.getDefaultOutputDevice();
-const outputStream = device.openOutputStream();
+(async () => {
+  await soundio.refreshDevices();
 
-outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
-outputStream.start();
+  const device = soundio.getDefaultOutputDevice();
+  const outputStream = device.openOutputStream();
 
-setTimeout(() => {
-  console.log('exiting');
-  process.exit(0);
-}, 1000);
+  outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
+  outputStream.start();
+
+  setTimeout(() => {
+    console.log('exiting');
+    process.exit(0);
+  }, 1000);
+})()
+
 ```
 
 And in `./workers/whitenoise.js`:
@@ -216,23 +228,27 @@ const path = require('path');
 const { Soundio } = require('audioworklet');
 const soundio = new Soundio();
 
-const device = soundio.getDefaultOutputDevice();
-const outputStream = device.openOutputStream();
+(async () => {
+  await soundio.refreshDevices();
 
-const worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
-outputStream.start();
+  const device = soundio.getDefaultOutputDevice();
+  const outputStream = device.openOutputStream();
 
-setTimeout(() => {
-  console.log('Muting worklet');
-  worklet.postMessage({
-    mute: true,
-  });
-}, 1000);
+  const worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
+  outputStream.start();
 
-setTimeout(() => {
-  console.log('exiting');
-  process.exit(0);
-}, 2000);
+  setTimeout(() => {
+    console.log('Muting worklet');
+    worklet.postMessage({
+      mute: true,
+    });
+  }, 1000);
+
+  setTimeout(() => {
+    console.log('exiting');
+    process.exit(0);
+  }, 2000);
+})()
 ```
 
 And in `workers/messages.js`:
