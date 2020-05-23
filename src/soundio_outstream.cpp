@@ -200,6 +200,7 @@ SoundioOutstreamWrap::SoundioOutstreamWrap(
 	outstream->userdata = this;
 	outstream->write_callback = write_callback;
 	outstream->software_latency = _configuredOutputBufferDuration;
+	outstream->layout = *soundio_channel_layout_get_default(2);
 
   int err;
 	if ((err = soundio_outstream_open(outstream))) {
