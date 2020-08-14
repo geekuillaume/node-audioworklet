@@ -1,6 +1,6 @@
-const { Soundio } = require('../');
+const { AudioServer } = require('../');
 
-const soundio = new Soundio();
+const audioServer = new AudioServer();
 
 const logDevice = (device) => {
   console.log('---------------');
@@ -10,15 +10,10 @@ const logDevice = (device) => {
 }
 
 const main = async () => {
-  await soundio.refreshDevices()
-
-  soundio.getDevices().outputDevices.forEach(logDevice);
-  soundio.getDevices().inputDevices.forEach(logDevice);
-
+  audioServer.getDevices().outputDevices.forEach(logDevice);
+  audioServer.getDevices().inputDevices.forEach(logDevice);
   console.log('-------')
 
-  console.log('default output:', soundio.getDefaultOutputDevice().name);
-  console.log('default input:', soundio.getDefaultInputDevice().name);
-  console.log('API:', soundio.getApi());
+  console.log('API:', audioServer.getApi());
 }
 main();

@@ -1,6 +1,7 @@
 #include <napi.h>
 
-#include "soundio.h"
+#include "audioserver.h"
+#include "audiostream.h"
 #include "class_registry.h"
 #include <iostream>
 
@@ -10,10 +11,11 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
 
 	auto registry = new ClassRegistry();
 
-	SoundioWrap::Init(env, exports, registry);
-	SoundioDeviceWrap::Init(env, exports, registry);
-	SoundioOutstreamWrap::Init(env, exports, registry);
-	SoundioInstreamWrap::Init(env, exports, registry);
+	AudioServerWrap::Init(env, exports, registry);
+	AudioStream::Init(env, exports, registry);
+	// SoundioDeviceWrap::Init(env, exports, registry);
+	// SoundioOutstreamWrap::Init(env, exports, registry);
+	// SoundioInstreamWrap::Init(env, exports, registry);
 
 	return exports;
 }

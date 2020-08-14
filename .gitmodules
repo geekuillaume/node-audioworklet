@@ -1,3 +1,3 @@
-[submodule "vendor/libsoundio"]
-	path = vendor/libsoundio
-	url = https://github.com/andrewrk/libsoundio.git
+[submodule "vendor/cubeb"]
+	path = vendor/cubeb
+	url = https://github.com/kinetiknz/cubeb.git

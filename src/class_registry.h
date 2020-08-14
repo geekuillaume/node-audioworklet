@@ -10,8 +10,6 @@
 // This should be simplified in NAPI v6 with these https://nodejs.org/api/n-api.html#n_api_environment_life_cycle_apis
 class ClassRegistry {
   public:
-    Napi::FunctionReference SoundioConstructor;
-    Napi::FunctionReference SoundioDeviceConstructor;
-    Napi::FunctionReference SoundioInstreamConstructor;
-    Napi::FunctionReference SoundioOutstreamConstructor;
+    Napi::FunctionReference AudioServerConstructor;
+    Napi::FunctionReference AudioStreamConstructor;
 };

@@ -1,5 +1,5 @@
-const { Soundio } = require('../');
-const soundio = new Soundio();
+const { AudioServer } = require('../');
+const audioServer = new AudioServer();
 
 let streamStatus = true;
 
@@ -19,25 +19,24 @@ const processFrame = (outputChannels) => {
 }
 
 const main = async () => {
-  await soundio.refreshDevices();
-
-  const device = soundio.getDefaultOutputDevice();
-  console.log('Opening stream');
-  const outputStream = device.openOutputStream({
-    format: Soundio.SoundIoFormatFloat32LE,
+  const device = audioServer.getDevices().outputDevices.find((device) => device.preferred.all);
+  console.log(`Opening stream on device ${device.name}`);
+  const stream = audioServer.initOutputStream(device.id, {
+    format: AudioServer.F32LE,
     process: processFrame,
     sampleRate: 48000,
+    channels: 2,
   });
 
   console.log('Starting stream');
-  outputStream.start();
+  stream.start();
 
   setTimeout(() => {
     console.log('Stopping stream');
     streamStatus = false;
-  }, 2000);
-  setTimeout(() => {
-    process.exit(0);
-  }, 3000);
+  }, 100);
+  // setTimeout(() => {
+  //   process.exit(0);
+  // }, 1000);
 }
 main();

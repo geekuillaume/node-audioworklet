@@ -31,17 +31,17 @@ IF (APPLE)
 ENDIF()
 
 set(BUILD_TESTS OFF CACHE BOOL "test")
-set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "test")
-set(BUILD_STATIC_LIBS OFF CACHE BOOL "test")
+set(BUILD_TOOLS OFF CACHE BOOL "test")
+set(BUILD_SHARED_LIBS ON CACHE BOOL "test")
 
-add_subdirectory(vendor/libsoundio soundio)
-include_directories(vendor/libsoundio)
+add_subdirectory(vendor/cubeb cubeb)
+include_directories(vendor/cubeb)
 
 # Set C++17 standard
 set (CMAKE_CXX_STANDARD 17)
 
 # Get all the cpp files for audioworklet
-file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.h")
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c" "src/*.h")
 
 # Add audioworklet as a library
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${CMAKE_JS_SRC})
@@ -65,4 +65,4 @@ string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${NODE_ADDON_API_DIR})
 
 # Compile the library
-target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBS} ${CMAKE_JS_LIB} libsoundio_shared)
+target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBS} ${CMAKE_JS_LIB} cubeb)

@@ -5,14 +5,13 @@
 	"main": "src/index.js",
 	"types": "src/index.d.ts",
 	"scripts": {
-		"build": "npm run patch-vendors && cmake-js compile",
+		"build": "cmake-js compile",
 		"build:doc": "typedoc src",
-		"build:debug": "npm run patch-vendors && cmake-js compile -D",
+		"build:debug": "cmake-js compile -D",
 		"install": "prebuild-install --target 4 -r napi || npm run build",
 		"deploy": "np --no-tests",
-		"build-binaries": "npm run patch-vendors && prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
-		"build-and-upload": "npm run patch-vendors && npm run build-and-upload-script-os",
-		"patch-vendors": "bash ./scripts/apply_vendor_patch.sh",
+		"build-binaries": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
+		"build-and-upload": "npm run build-and-upload-script-os",
 		"build-and-upload-script-os": " run-script-os",
 		"build-and-upload-script-os:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN",
 		"build-and-upload-script-os:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%"

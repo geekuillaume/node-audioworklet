@@ -2,26 +2,16 @@
 
 import { Worker } from 'worker_threads';
 
-declare interface SoundioDevicesResponse {
-	outputDevices: SoundioDevice[];
-	inputDevices: SoundioDevice[];
+declare interface AudioDevicesResponse {
+	outputDevices: AudioDevice[];
+	inputDevices: AudioDevice[];
 }
 
-declare const enum SoundioAudioFormat {
-	SoundIoFormatS8,
-	SoundIoFormatU8,
-	SoundIoFormatS16LE,
-	SoundIoFormatS16BE,
-	SoundIoFormatU16LE,
-	SoundIoFormatU16BE,
-	SoundIoFormatS32LE,
-	SoundIoFormatS32BE,
-	SoundIoFormatU32LE,
-	SoundIoFormatU32BE,
-	SoundIoFormatFloat32LE,
-	SoundIoFormatFloat32BE,
-	SoundIoFormatFloat64LE,
-	SoundIoFormatFloat64BE,
+declare const enum AudioFormat {
+	S16LE = 0x0010, /**< 16-bit integers, Little Endian. */
+	S16BE = 0x0020, /**< 16-bit integers, Big Endian. */
+	F32LE = 0x1000, /**< 32-bit floating point, Little Endian. */
+	F32BE = 0x2000  /**< 32-bit floating point, Big Endian. */
 }
 
 export type TypedArray = Int8Array |
@@ -35,7 +25,7 @@ export type TypedArray = Int8Array |
   Float64Array;
 
 interface StreamParams {
-	format?: SoundioAudioFormat;
+	format?: AudioFormat;
 
 	/** number of samples per second per channel */
 	sampleRate?: number;
@@ -48,55 +38,37 @@ interface StreamParams {
 	bufferDuration?: number;
 }
 
-export declare class Soundio {
+export declare class AudioServer {
 
-	static SoundIoFormatS8: SoundioAudioFormat;
-	static SoundIoFormatU8: SoundioAudioFormat;
-	static SoundIoFormatS16LE: SoundioAudioFormat;
-	static SoundIoFormatS16BE: SoundioAudioFormat;
-	static SoundIoFormatU16LE: SoundioAudioFormat;
-	static SoundIoFormatU16BE: SoundioAudioFormat;
-	static SoundIoFormatS24LE: SoundioAudioFormat;
-	static SoundIoFormatS24BE: SoundioAudioFormat;
-	static SoundIoFormatU24LE: SoundioAudioFormat;
-	static SoundIoFormatU24BE: SoundioAudioFormat;
-	static SoundIoFormatS32LE: SoundioAudioFormat;
-	static SoundIoFormatS32BE: SoundioAudioFormat;
-	static SoundIoFormatU32LE: SoundioAudioFormat;
-	static SoundIoFormatU32BE: SoundioAudioFormat;
-	static SoundIoFormatFloat32LE: SoundioAudioFormat;
-	static SoundIoFormatFloat32BE: SoundioAudioFormat;
-	static SoundIoFormatFloat64LE: SoundioAudioFormat;
-	static SoundIoFormatFloat64BE: SoundioAudioFormat;
+	static S16LE: AudioFormat;
+	static S16BE: AudioFormat;
+	static F32LE: AudioFormat;
+	static F32BE: AudioFormat;
 
 	getApi(): string;
-	getDevices(): SoundioDevicesResponse;
-	getDefaultInputDevice(): SoundioDevice;
-	getDefaultOutputDevice(): SoundioDevice;
-
-	refreshDevices(): Promise<void>;
+	getDevices(): AudioDevicesResponse;
 }
 
-export declare class SoundioDevice {
+export declare class AudioDevice {
 	name: string;
 	id: string;
-	isInput: boolean;
-	isOutput: boolean;
-	formats: SoundioAudioFormat[];
-	sampleRates: {
-		min: number;
-		max: number;
-	}[];
-	channelLayouts: {
-		name: string;
-		channelCount: number;
-	}[];
-
-	openOutputStream(params?: StreamParams): SoundioOutputStream;
-	openInputStream(params?: StreamParams): SoundioInputStream;
+	minRate: number;
+	maxRate: number;
+	defaultRate: number;
+	maxChannels: number;
+	minLatency: number;
+	maxLatency: number;
+	groupId: string;
+	defaultFormat: AudioFormat;
+	preferred: {
+		multimedia: boolean;
+		voice: boolean;
+		notification: boolean;
+		all: boolean;
+	}
 }
 
-export declare class SoundioOutputStream {
+export declare class AudioStream {
 	start(): void;
 
 	close(): void;
@@ -116,7 +88,7 @@ export declare class SoundioOutputStream {
 }
 
 
-export declare class SoundioInputStream {
+export declare class AudioInputStream {
 	start(): void;
 
 	close(): void;
