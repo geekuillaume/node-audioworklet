@@ -13,6 +13,8 @@
 #include "./audiostream.h"
 #include "class_registry.h"
 
+void device_collection_changed_handler(cubeb *context, void *user_ptr);
+
 class AudioServerWrap : public Napi::ObjectWrap<AudioServerWrap>
 {
 public:
@@ -26,11 +28,14 @@ public:
 	Napi::Value initInputStream(const Napi::CallbackInfo& info);
 	Napi::Value initOutputStream(const Napi::CallbackInfo& info);
 
+	friend void device_collection_changed_handler(cubeb *context, void *user_ptr);
+
 	cubeb	*_cubeb;
 
 private:
 	inline static Napi::FunctionReference constructor;
 	Napi::Reference<Napi::Value> _ownRef;
+	Napi::ThreadSafeFunction _deviceChangeHandler;
 	ClassRegistry *registry;
 };
 

@@ -25,6 +25,7 @@ export type TypedArray = Int8Array |
   Float64Array;
 
 interface StreamParams {
+	channels?: number;
 	format?: AudioFormat;
 
 	/** number of samples per second per channel */
@@ -35,10 +36,13 @@ interface StreamParams {
 
 	name?: string;
 	process?: ((inputOrOutputChannels: TypedArray[]) => boolean);
-	bufferDuration?: number;
+
+	/** size of the buffer in frames */
+	latencyFrames?: number;
 }
 
 export declare class AudioServer {
+	constructor({onDeviceChange}?: {onDeviceChange?: () => any});
 
 	static S16LE: AudioFormat;
 	static S16BE: AudioFormat;
@@ -47,6 +51,10 @@ export declare class AudioServer {
 
 	getApi(): string;
 	getDevices(): AudioDevicesResponse;
+	getDefaultOutputDevice(): AudioDevice;
+	getDefaultInputDevice(): AudioDevice;
+	initInputStream(deviceId: string, params?: StreamParams): AudioStream;
+	initOutputStream(deviceId: string, params?: StreamParams): AudioStream;
 }
 
 export declare class AudioDevice {
@@ -70,32 +78,12 @@ export declare class AudioDevice {
 
 export declare class AudioStream {
 	start(): void;
+	stop(): void;
 
-	close(): void;
-	isOpen(): boolean;
+	isStarted(): boolean;
 
-	setPause(paused: boolean): void;
 	getLatency(): number;
 	setVolume(volume: number): void;
-	setProcessFunction(process: ((outputChannels: Buffer[]) => boolean)): void;
-	clearBuffer(): void;
-
-	/**
-	 * Start the module specified by scriptPath in a new worker thread and use it as the process function
-	 * The module should export a class extending AudioWorkletProcessor with the process method implemented
-	 */
-	attachProcessFunctionFromWorker(scriptPath: string): Worker;
-}
-
-
-export declare class AudioInputStream {
-	start(): void;
-
-	close(): void;
-	isOpen(): boolean;
-
-	setPause(paused: boolean): void;
-	getLatency(): number;
 	setProcessFunction(process: ((outputChannels: Buffer[]) => boolean)): void;
 
 	/**

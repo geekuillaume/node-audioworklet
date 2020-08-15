@@ -1,11 +1,9 @@
-const { Soundio } = require('../');
-const soundio = new Soundio();
+const { AudioServer } = require('../');
+const audioServer = new AudioServer();
 
 const main = async () => {
-  await soundio.refreshDevices();
-
-  const inDevice = soundio.getDefaultInputDevice();
-  const outDevice = soundio.getDefaultOutputDevice();
+  const inDevice = audioServer.getDefaultInputDevice();
+  const outDevice = audioServer.getDefaultOutputDevice();
   console.log(`Recording from ${inDevice.name} and sending to ${outDevice.name}`);
 
   const CHANNELS = 1;
@@ -15,33 +13,35 @@ const main = async () => {
   let inPtr = SAMPLE_RATE * 2; // 2 seconds in the future
   let outPtr = 0;
 
-  const inputStream = inDevice.openInputStream({
+  const inputStream = audioServer.initInputStream(inDevice.id, {
     sampleRate: SAMPLE_RATE,
-    format: Soundio.SoundIoFormatFloat32LE,
+    format: AudioServer.F32LE,
+    channels: 1,
     process: (inputChannels) => {
       buffer.set(inputChannels[0], inPtr);
-      inPtr += inputChannels[0].length;
+      inPtr = (inPtr + inputChannels[0].length) % buffer.length;
       return true;
     },
   });
 
-  const outputStream = outDevice.openOutputStream({
+  const outputStream = audioServer.initOutputStream(outDevice.id, {
     sampleRate: SAMPLE_RATE,
-    format: Soundio.SoundIoFormatFloat32LE,
+    format: AudioServer.F32LE,
     process: (outputChannels) => {
       outputChannels.forEach((channel) => {
         channel.set(buffer.slice(outPtr, outPtr + outputChannels[0].length));
       });
-      outPtr += outputChannels[0].length;
+      outPtr = (outPtr + outputChannels[0].length) % buffer.length;
       return true;
     }
   });
+
   inputStream.start();
   outputStream.start();
 
   setTimeout(() => {
-    inputStream.close();
-    outputStream.close();
+    inputStream.stop();
+    outputStream.stop();
   }, 10000);
 }
 

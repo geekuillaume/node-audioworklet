@@ -1,5 +1,6 @@
-const { Soundio } = require('../');
-const soundio = new Soundio();
+const { AudioServer } = require('../');
+const { assert } = require('console');
+const audioServer = new AudioServer();
 
 let streamStatus = true;
 
@@ -8,6 +9,7 @@ const pitch = 440;
 const radPerSecond = Math.PI * 2 * pitch;
 
 const processFrame = (outputChannels) => {
+  assert(outputChannels[0].length === 542);
   for (let sample = 0; sample < outputChannels[0].length; sample++) {
     const sinSample = Math.sin(radPerSecond * (currentSample / 48000));
     outputChannels.forEach((channel) => {
@@ -19,13 +21,12 @@ const processFrame = (outputChannels) => {
 }
 
 const main = async () => {
-  await soundio.refreshDevices();
-  const device = soundio.getDefaultOutputDevice();
+  const device = audioServer.getDefaultOutputDevice();
   console.log('Opening stream');
-  const outputStream = device.openOutputStream({
-    format: Soundio.SoundIoFormatFloat32LE,
+  const outputStream = audioServer.initOutputStream(device.id, {
+    format: AudioServer.F32LE,
     sampleRate: 48000,
-    frameSize: 480,
+    frameSize: 542,
     name: "test test",
     process: processFrame,
   });
@@ -37,8 +38,5 @@ const main = async () => {
     console.log('Stopping stream');
     streamStatus = false;
   }, 2000);
-  setTimeout(() => {
-    process.exit(0);
-  }, 3000);
 }
 main();

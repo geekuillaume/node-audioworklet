@@ -19,7 +19,7 @@ const processFrame = (outputChannels) => {
 }
 
 const main = async () => {
-  const device = audioServer.getDevices().outputDevices.find((device) => device.preferred.all);
+  const device = audioServer.getDefaultOutputDevice();
   console.log(`Opening stream on device ${device.name}`);
   const stream = audioServer.initOutputStream(device.id, {
     format: AudioServer.F32LE,

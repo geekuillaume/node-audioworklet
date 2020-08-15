@@ -1,6 +1,6 @@
 # Node Audioworklet
 
-Node Audioworklet is a NodeJS lib exposing a set of function to output audio on an audio card. It's close to the AudioWorklet interface of WebAudio. It uses [libsoundio](http://libsound.io/) to support a wide variety of OS and configuration: Linux (native ALSA, JACK, PulseAudio), Macintosh OS X (CoreAudio and JACK), and Windows (WASAPI). It only handle raw PCM frames that should be set into a Buffer for every frame. You can set the buffer size to precisely time the sound you are emitting.
+Node Audioworklet is a NodeJS lib exposing a set of function to output audio on an audio card. It's close to the AudioWorklet interface of WebAudio. It uses [cubeb](https://github.com/kinetiknz/cubeb) to support a wide variety of OS and configuration ([details](https://github.com/kinetiknz/cubeb/wiki/Backend-Support)). It only handle raw PCM frames that should be set into a Buffer for every frame. You can set the buffer size to precisely time the sound you are emitting.
 
 AudioWorklet also can use another file started in a [NodeJS Worker Thread](https://nodejs.org/api/worker_threads.html) as the process function to isolate the thread and better manage the memory to prevent stop-the-world Garbage Collection from stopping the thread and cause audio artifacts. You need Node v10 or higher to use this feature.
 
@@ -21,9 +21,9 @@ yarn add audioworklet
 ### List devices
 
 ```javascript
-const { Soundio } = require('audioworklet');
+const { AudioServer } = require('audioworklet');
 
-const soundio = new Soundio();
+const audioServer = new AudioServer();
 
 const logDevice = (device) => {
   console.log('---------------');
@@ -134,10 +134,8 @@ API: PulseAudio
 ### Play white noise
 
 ```javascript
-const { Soundio } = require('audioworklet');
-const soundio = new Soundio();
-
-let streamStatus = true;
+const { AudioServer } = require('audioworklet');
+const audioServer = new AudioServer();
 
 const processFrame = (outputChannels) => {
   for (let sample = 0; sample < outputChannels[0].length; sample++) {
@@ -145,17 +143,15 @@ const processFrame = (outputChannels) => {
     outputChannels[1][sample] = Math.random();
   }
 
-  return streamStatus;
+  return true; // returning false will stop the stream
 }
 (async () => {
-  await soundio.refreshDevices();
-
-  const device = soundio.getDefaultOutputDevice();
+  const device = audioServer.getDefaultOutputDevice();
   console.log('Opening stream');
-  const outputStream = device.openOutputStream({
-    format: Soundio.SoundIoFormatFloat32LE,
+  const outputStream = audioServer.initOutputStream(device.id, {
+    format: AudioServer.F32LE,
     sampleRate: 48000,
-    name: "test test",
+    name: "test",
     process: processFrame,
   });
 
@@ -164,12 +160,8 @@ const processFrame = (outputChannels) => {
 
   setTimeout(() => {
     console.log('Stopping stream');
-    // streamStatus = false;
-    outputStream.close();
+    outputStream.stop();
   }, 2000);
-  setTimeout(() => {
-    process.exit(0);
-  }, 3000);
 })()
 ```
 
@@ -177,14 +169,14 @@ const processFrame = (outputChannels) => {
 
 ```javascript
 const path = require('path');
-const { Soundio } = require('audioworklet');
-const soundio = new Soundio();
+const { AudioServer } = require('audioworklet');
+const audioServer = new AudioServer();
 
 (async () => {
-  await soundio.refreshDevices();
-
-  const device = soundio.getDefaultOutputDevice();
-  const outputStream = device.openOutputStream();
+  const device = audioServer.getDefaultOutputDevice();
+  const outputStream = audioServer.initOutputStream(device.id, {
+    format: AudioServer.F32LE,
+  });
 
   outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
   outputStream.start();
@@ -225,14 +217,14 @@ module.exports = WhiteNoiseProcessor;
 
 ```javascript
 const path = require('path');
-const { Soundio } = require('audioworklet');
-const soundio = new Soundio();
+const { AudioServer } = require('audioworklet');
+const audioServer = new AudioServer();
 
 (async () => {
-  await soundio.refreshDevices();
-
-  const device = soundio.getDefaultOutputDevice();
-  const outputStream = device.openOutputStream();
+  const device = audioServer.getDefaultOutputDevice();
+  const outputStream = audioServer.initOutputStream(device.id, {
+    format: AudioServer.F32LE,
+  });
 
   const worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
   outputStream.start();
@@ -290,11 +282,10 @@ The `this.port` property is a `MessagePort` and also handle passing a second arg
 
 ## Development
 
-### Download libsoundio
+### Download cubeb
 
 ```
 git submodule update --init --recursive
-cd vendor/libsoundio
 ```
 
 ### Requirements for source build

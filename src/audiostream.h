@@ -23,11 +23,11 @@ public:
 	Napi::Value isStarted(const Napi::CallbackInfo& info);
 	void start(const Napi::CallbackInfo &info);
 	void stop(const Napi::CallbackInfo &info);
-	// void setVolume(const Napi::CallbackInfo &info);
-	// Napi::Value getLatency(const Napi::CallbackInfo& info);
+	void setVolume(const Napi::CallbackInfo &info);
+	Napi::Value getLatency(const Napi::CallbackInfo& info);
 	void setProcessFunction(const Napi::CallbackInfo& info);
 
-	friend long write_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffer, void *output_buffer, long nframes);
+	friend long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffer, void *output_buffer, long nframes);
 	friend void state_callback(cubeb_stream * stm, void * user, cubeb_state state);
 	friend void state_callback_js(const Napi::CallbackInfo& info);
 
@@ -40,8 +40,8 @@ private:
 	void _setProcessFunction(const Napi::Env &env);
 
 	uint32_t _configuredLatencyFrames;
-	uint32_t 	_outstreamFrameSize;
-	std::vector<std::vector<uint8_t>>	_outstreamJsBuffer;
+	uint32_t 	_streamFrameSize;
+	std::vector<std::vector<uint8_t>>	_streamJsBuffer;
 
 	bool _isStarted;
 	std::mutex _processfnMutex;

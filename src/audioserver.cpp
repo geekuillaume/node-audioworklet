@@ -33,7 +33,22 @@ AudioServerWrap::AudioServerWrap(
 {
 	registry = static_cast<ClassRegistry *>(info.Data());
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This()); // this is used to prevent the GC to collect this object while a stream is running
+	Napi::Object opts = info[0].As<Napi::Object>();
 	int err;
+
+	if (!opts.IsUndefined() && !opts.Get("onDeviceChange").IsUndefined()) {
+		_deviceChangeHandler = Napi::ThreadSafeFunction::New(
+			info.Env(),
+			opts.Get("onDeviceChange").As<Napi::Function>(),
+			"audioworkletDeviceChangeHandler",
+			0,
+			1,
+			[this](Napi::Env) {
+				_deviceChangeHandler = nullptr;
+		});
+		// let the process exit if there is only this thread safe function running
+		_deviceChangeHandler.Unref(info.Env());
+	}
 
 	err = cubeb_init(&_cubeb, "AudioWorklet", NULL);
 	if (err != CUBEB_OK) {
@@ -111,6 +126,7 @@ Napi::Value AudioServerWrap::getDevices(const Napi::CallbackInfo &info)
 
 	cubeb_device_collection_destroy(_cubeb, &inputDevices);
 	cubeb_device_collection_destroy(_cubeb, &outputDevices);
+	cubeb_register_device_collection_changed(_cubeb, (cubeb_device_type)(CUBEB_DEVICE_TYPE_INPUT | CUBEB_DEVICE_TYPE_OUTPUT), device_collection_changed_handler, this);
 
 	return devices;
 }
@@ -125,7 +141,7 @@ Napi::Value AudioServerWrap::initOutputStream(const Napi::CallbackInfo& info)
 	cubeb_device_collection devices;
 	int err;
 
-	err = cubeb_enumerate_devices(_cubeb, CUBEB_DEVICE_TYPE_OUTPUT, &devices);
+	err = cubeb_enumerate_devices(_cubeb, (cubeb_device_type)(CUBEB_DEVICE_TYPE_OUTPUT | CUBEB_DEVICE_TYPE_INPUT), &devices);
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while enumerating devices");
 	}
@@ -133,6 +149,9 @@ Napi::Value AudioServerWrap::initOutputStream(const Napi::CallbackInfo& info)
 	for (unsigned int i = 0; i < devices.count; i++)
 	{
 		if (info[0].As<Napi::String>().Utf8Value().compare(devices.device[i].device_id) == 0) {
+			if (devices.device[i].type != CUBEB_DEVICE_TYPE_OUTPUT) {
+				throw Napi::Error::New(info.Env(), "This is an input device but required an output stream");
+			}
 			Napi::Value ret = registry->AudioStreamConstructor.New({
 				info.This(),
 				Napi::External<cubeb>::New(info.Env(), _cubeb),
@@ -150,8 +169,40 @@ Napi::Value AudioServerWrap::initOutputStream(const Napi::CallbackInfo& info)
 
 Napi::Value AudioServerWrap::initInputStream(const Napi::CallbackInfo& info)
 {
-	return registry->AudioStreamConstructor.New({
-    info.This(),
-    info[0]
-  });
+	cubeb_device_collection devices;
+	int err;
+
+	err = cubeb_enumerate_devices(_cubeb, (cubeb_device_type)(CUBEB_DEVICE_TYPE_OUTPUT | CUBEB_DEVICE_TYPE_INPUT), &devices);
+	if (err != CUBEB_OK) {
+		throw Napi::Error::New(info.Env(), "Error while enumerating devices");
+	}
+
+	for (unsigned int i = 0; i < devices.count; i++)
+	{
+		if (info[0].As<Napi::String>().Utf8Value().compare(devices.device[i].device_id) == 0) {
+			if (devices.device[i].type != CUBEB_DEVICE_TYPE_INPUT) {
+				throw Napi::Error::New(info.Env(), "This is an output device but required an input stream");
+			}
+			Napi::Value ret = registry->AudioStreamConstructor.New({
+				info.This(),
+				Napi::External<cubeb>::New(info.Env(), _cubeb),
+				Napi::External<cubeb_device_info>::New(info.Env(), &devices.device[i]),
+				Napi::Boolean::New(info.Env(), true),
+				info[1]
+			});
+			cubeb_device_collection_destroy(_cubeb, &devices);
+			return ret;
+		}
+	}
+	cubeb_device_collection_destroy(_cubeb, &devices);
+	throw Napi::Error::New(info.Env(), "Unknown device id");
 };
+
+void device_collection_changed_handler(cubeb *context, void *user_ptr)
+{
+	AudioServerWrap *wrap = (AudioServerWrap *)user_ptr;
+
+	if (wrap->_deviceChangeHandler) {
+		wrap->_deviceChangeHandler.BlockingCall();
+	}
+}

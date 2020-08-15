@@ -1,12 +1,12 @@
 const path = require('path');
-const { Soundio } = require('../');
-const soundio = new Soundio();
+const { AudioServer } = require('../');
+const audioServer = new AudioServer();
 
 const main = async () => {
-  await soundio.refreshDevices();
-
-  const device = soundio.getDefaultOutputDevice();
-  const outputStream = device.openOutputStream();
+  const device = audioServer.getDefaultOutputDevice();
+  const outputStream = audioServer.initOutputStream(device.id, {
+    format: AudioServer.F32LE,
+  });
 
   const worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
   outputStream.start();

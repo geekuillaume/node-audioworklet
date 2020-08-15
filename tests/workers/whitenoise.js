@@ -6,11 +6,11 @@ class WhiteNoiseProcessor extends AudioWorkletProcessor {
   }
 
   process(outputChannels) {
-    outputChannels.forEach((channel) => {
-      for (let sample = 0; sample < channel.length; sample++) {
-        channel[sample] = Math.random();
-      }
-    })
+    for (let sample = 0; sample < outputChannels[0].length; sample++) {
+      outputChannels[0][sample] = Math.random();
+      outputChannels[1][sample] = Math.random();
+    }
+    console.log('coucou', outputChannels);
 
     return true;
   }

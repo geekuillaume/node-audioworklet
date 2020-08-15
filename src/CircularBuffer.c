@@ -61,7 +61,7 @@ size_t CircularBufferGetDataSize(CircularBuffer cBuf)
     return cBuf->dataSize;
 }
 
-void CircularBufferPush(CircularBuffer cBuf,void *src, size_t length)
+void CircularBufferPush(CircularBuffer cBuf, const void *src, size_t length)
 {
     if(length == 0)
         return;

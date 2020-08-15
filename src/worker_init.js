@@ -11,7 +11,6 @@ try {
 
 const scriptPath = workerData.scriptPath;
 const streamPtr = workerData.streamPtr;
-const streamType = workerData.streamType;
 
 const workerModule = require(scriptPath);
 let WorkerClass;
@@ -22,13 +21,7 @@ if (workerModule.default) {
 }
 
 const worker = new WorkerClass();
-if (streamType === 'instream') {
-  audioworklet.SoundioInstream._setProcessFunctionFromExternal(streamPtr, worker.process.bind(worker));
-} else if (streamType === 'outstream') {
-  audioworklet.SoundioOutstream._setProcessFunctionFromExternal(streamPtr, worker.process.bind(worker));
-} else {
-  throw new Error('Invalid stream type');
-}
+audioworklet.AudioStream._setProcessFunctionFromExternal(streamPtr, worker.process.bind(worker));
 
 
 

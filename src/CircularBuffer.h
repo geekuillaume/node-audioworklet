@@ -36,7 +36,7 @@ extern size_t CircularBufferGetSize(CircularBuffer cBuf);
 extern size_t CircularBufferGetDataSize(CircularBuffer cBuf);
 
 // Push data to the tail of a circular buffer from 'src' with 'length' size in byte.
-extern void CircularBufferPush(CircularBuffer cBuf,void *src, size_t length);
+extern void CircularBufferPush(CircularBuffer cBuf, const void *src, size_t length);
 
 // Pop data from a circular buffer to 'dataOut'  with wished 'length' size in byte,return the actual data size in byte popped out,which is less or equal to the input 'length parameter.
 extern size_t CircularBufferPop(CircularBuffer cBuf, size_t length, void *dataOut);

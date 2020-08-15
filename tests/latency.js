@@ -1,8 +1,9 @@
-const { Soundio } = require('../');
-const soundio = new Soundio();
+const { AudioServer } = require('../');
+const audioServer = new AudioServer();
 
 let streamStatus = true;
 
+const sampleRate = 48000;
 let currentSample = 0;
 const pitch = 440;
 let currentPitch = 0;
@@ -21,12 +22,13 @@ const processFrame = (outputChannels) => {
 }
 
 const main = async () => {
-  await soundio.refreshDevices();
-  const device = soundio.getDefaultOutputDevice();
+  const device = audioServer.getDefaultOutputDevice();
   console.log('Opening stream');
-  const outputStream = device.openOutputStream({
-    format: Soundio.SoundIoFormatFloat32LE,
+  const outputStream = audioServer.initOutputStream(device.id, {
+    sampleRate,
+    format: AudioServer.F32LE,
     process: processFrame,
+
   });
 
   console.log('Starting stream');
@@ -34,7 +36,8 @@ const main = async () => {
 
   const triggerBeep = () => {
     currentPitch = pitch;
-    console.log(`Latency: ${outputStream.getLatency()}s`);
+    const latency = outputStream.getLatency();
+    console.log(`Latency: ${latency} frames - ${Math.round((latency / sampleRate) * 1000)}ms`);
     console.log('Beep');
     setTimeout(() => {
       console.log('End beep');
