@@ -14,7 +14,11 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 	int framesPerJsCall = wrap->_streamFrameSize;
 	int bytesPerSample = bytesPerFormat(format);
 	int bytesPerFrame = bytesPerSample * wrap->_params.channels;
-	char interleavedBuffer[((framesPerJsCall > nframes) ? framesPerJsCall : nframes) * wrap->_params.channels * bytesPerSample];
+	int maxRequiredSize = (framesPerJsCall > nframes) ? framesPerJsCall : nframes;
+	if (wrap->_interleavedBuffer.size() < maxRequiredSize) {
+		wrap->_interleavedBuffer.resize(maxRequiredSize);
+	}
+	char *interleavedBuffer = (char *)wrap->_interleavedBuffer.data();
 
 	if (!wrap->_processFramefn) {
 		return nframes;
@@ -254,6 +258,7 @@ AudioStream::AudioStream(
 			std::vector<uint8_t>(_streamFrameSize * bytesPerFormat(_params.format), uint8_t(0))
 		);
 	}
+	_interleavedBuffer = std::vector<int8_t>(_streamFrameSize * bytesPerFormat(_params.format) * _params.channels, int8_t(0));
 
 	if (_isInput) {
 		err = cubeb_stream_init(

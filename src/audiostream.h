@@ -42,6 +42,7 @@ private:
 	uint32_t _configuredLatencyFrames;
 	uint32_t 	_streamFrameSize;
 	std::vector<std::vector<uint8_t>>	_streamJsBuffer;
+	std::vector<int8_t> _interleavedBuffer;
 
 	bool _isStarted;
 	std::mutex _processfnMutex;
