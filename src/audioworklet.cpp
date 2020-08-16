@@ -23,9 +23,6 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
 
 	AudioServerWrap::Init(env, exports, registry);
 	AudioStream::Init(env, exports, registry);
-	// SoundioDeviceWrap::Init(env, exports, registry);
-	// SoundioOutstreamWrap::Init(env, exports, registry);
-	// SoundioInstreamWrap::Init(env, exports, registry);
 
 	#if defined( _WIN32)
 		CoInitializeEx(nullptr, COINIT_MULTITHREADED);
