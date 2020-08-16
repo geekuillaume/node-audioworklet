@@ -292,7 +292,9 @@ AudioStream::AudioStream(
 		throw Napi::Error::New(info.Env(), "Error while starting stream");
 	}
 
-	_audioBuffer = CircularBufferCreate(_configuredLatencyFrames * bytesPerFormat(_params.format) * _params.channels);
+	_audioBuffer = CircularBufferCreate(
+		_params.rate * bytesPerFormat(_params.format) * _params.channels
+	);
 	CircularBufferReset(_audioBuffer);
 
 }
