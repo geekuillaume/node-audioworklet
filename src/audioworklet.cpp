@@ -5,6 +5,16 @@
 #include "class_registry.h"
 #include <iostream>
 
+#if defined( _WIN32)
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <objbase.h>
+	#include <windows.h>
+#else
+	#include <unistd.h>
+#endif
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
   Napi::HandleScope scope(env);
@@ -16,6 +26,10 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
 	// SoundioDeviceWrap::Init(env, exports, registry);
 	// SoundioOutstreamWrap::Init(env, exports, registry);
 	// SoundioInstreamWrap::Init(env, exports, registry);
+
+	#if defined( _WIN32)
+		CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	#endif
 
 	return exports;
 }
