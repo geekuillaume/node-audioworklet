@@ -14,14 +14,14 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 	int framesPerJsCall = wrap->_streamFrameSize;
 	int bytesPerSample = bytesPerFormat(format);
 	int bytesPerFrame = bytesPerSample * wrap->_params.channels;
-	uint8_t interleavedBuffer[((framesPerJsCall > nframes) ? framesPerJsCall : nframes) * wrap->_params.channels * bytesPerSample];
+	char interleavedBuffer[((framesPerJsCall > nframes) ? framesPerJsCall : nframes) * wrap->_params.channels * bytesPerSample];
 
 	if (!wrap->_processFramefn) {
 		return nframes;
 	}
 
 	if (wrap->_isInput) {
-		CircularBufferPush(wrap->_audioBuffer, input_buffer, nframes * bytesPerFrame);
+		CircularBufferPush(wrap->_audioBuffer, (char *)input_buffer, nframes * bytesPerFrame);
 	}
 
 	while (wrap->_isInput ? (CircularBufferGetDataSize(wrap->_audioBuffer) > framesPerJsCall * bytesPerFrame) : (CircularBufferGetDataSize(wrap->_audioBuffer) < nframes * bytesPerFrame)) {
@@ -107,7 +107,7 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 	}
 
 	if (!wrap->_isInput) {
-		CircularBufferPop(wrap->_audioBuffer, nframes * bytesPerFrame, output_buffer);
+		CircularBufferPop(wrap->_audioBuffer, nframes * bytesPerFrame, (char *)output_buffer);
 	}
   return nframes;
 }

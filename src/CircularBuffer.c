@@ -15,14 +15,14 @@ struct s_circularBuffer{
     size_t dataSize; //occupied data size
     size_t tailOffset; //head offset, the oldest byte position offset
     size_t headOffset; //tail offset, the lastest byte position offset
-    void *buffer;
+    char *buffer;
 
 };
 
 extern CircularBuffer CircularBufferCreate(size_t size)
 {
     size_t totalSize = sizeof(struct s_circularBuffer) + size;
-    void *p = malloc(totalSize);
+    char *p = malloc(totalSize);
     CircularBuffer buffer = (CircularBuffer)p;
     buffer->buffer = p + sizeof(struct s_circularBuffer);
     buffer->size = size;
@@ -61,13 +61,13 @@ size_t CircularBufferGetDataSize(CircularBuffer cBuf)
     return cBuf->dataSize;
 }
 
-void CircularBufferPush(CircularBuffer cBuf, const void *src, size_t length)
+void CircularBufferPush(CircularBuffer cBuf, const char *src, size_t length)
 {
     if(length == 0)
         return;
 
     size_t writableLen = length;
-    void *pSrc = src;
+    char *pSrc = src;
 
     if(writableLen > cBuf->size)//in case of size overflow
     {
@@ -128,7 +128,7 @@ void CircularBufferPush(CircularBuffer cBuf, const void *src, size_t length)
     }
 }
 
-size_t inter_circularBuffer_read(CircularBuffer cBuf, size_t length, void *dataOut, bool resetHead)
+size_t inter_circularBuffer_read(CircularBuffer cBuf, size_t length, char *dataOut, bool resetHead)
 {
     if(cBuf->dataSize == 0 || length == 0)
         return 0;
@@ -197,12 +197,12 @@ size_t inter_circularBuffer_read(CircularBuffer cBuf, size_t length, void *dataO
 }
 
 
-size_t CircularBufferPop(CircularBuffer cBuf, size_t length, void *dataOut)
+size_t CircularBufferPop(CircularBuffer cBuf, size_t length, char *dataOut)
 {
     return inter_circularBuffer_read(cBuf,length,dataOut,true);
 }
 
-size_t CircularBufferRead(CircularBuffer cBuf, size_t length, void *dataOut)
+size_t CircularBufferRead(CircularBuffer cBuf, size_t length, char *dataOut)
 {
     return inter_circularBuffer_read(cBuf,length,dataOut,false);
 }
