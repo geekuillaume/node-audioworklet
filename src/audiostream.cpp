@@ -202,13 +202,11 @@ AudioStream::AudioStream(
 
 	Napi::Object opts = info[4].IsUndefined() ? Napi::Object::New(info.Env()) : info[4].As<Napi::Object>();
 
-	_params = {
-		.format = CUBEB_SAMPLE_S16LE,
-		.rate = 48000,
-		.channels = 2,
-		.layout = CUBEB_LAYOUT_UNDEFINED,
-		.prefs = CUBEB_STREAM_PREF_NONE,
-	};
+	_params.format = CUBEB_SAMPLE_S16LE;
+	_params.rate = 48000;
+	_params.channels = 2;
+	_params.layout = CUBEB_LAYOUT_UNDEFINED;
+	_params.prefs = CUBEB_STREAM_PREF_NONE;
 
 	if (!opts.Get("format").IsNull() && !opts.Get("format").IsUndefined()) {
 		_params.format = (cubeb_sample_format)opts.Get("format").As<Napi::Number>().Int32Value();
