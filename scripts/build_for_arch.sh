@@ -18,13 +18,13 @@ then
   docker run --rm --workdir /workspace \
     -v `realpath ../`:/workspace \
     -e GITHUB_TOKEN=$GITHUB_TOKEN \
-    crossbuild bash -c "yarn && \
+    crossbuild bash -c "source \$HOME/.cargo/env && yarn && \
       yarn run build-and-upload"
 else
   docker run --rm --workdir /workspace \
     -v `realpath ../`:/workspace \
     -e GITHUB_TOKEN=$GITHUB_TOKEN \
-    crossbuild bash -c "yarn && \
+    crossbuild bash -c "source \$HOME/.cargo/env && yarn && \
       yarn run build-binaries"
 fi
 
