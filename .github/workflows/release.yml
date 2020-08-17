@@ -23,6 +23,7 @@ jobs:
       - name: Init submodules
         run: git submodule update --init --recursive && git clone https://github.com/djg/cubeb-pulse-rs.git vendor/cubeb/src/cubeb-pulse-rs && git clone https://github.com/ChunMinChang/cubeb-coreaudio-rs vendor/cubeb/src/cubeb-coreaudio-rs
 
+      - uses: hecrj/setup-rust-action@v1
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v1
         with:
