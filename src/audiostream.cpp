@@ -244,11 +244,11 @@ AudioStream::AudioStream(
 	}
 
 	if (!opts.Get("latencyFrames").IsNull() && !opts.Get("latencyFrames").IsUndefined()) {
-		uint32_t latency = opts.Get("bufferDuration").As<Napi::Number>().Uint32Value();
+		uint32_t latency = opts.Get("latencyFrames").As<Napi::Number>().Uint32Value();
 		if (latency < _configuredLatencyFrames) {
 			throw Napi::Error::New(info.Env(), "configured latency is too low");
 		}
-		_configuredLatencyFrames = opts.Get("bufferDuration").As<Napi::Number>().Uint32Value();
+		_configuredLatencyFrames = opts.Get("latencyFrames").As<Napi::Number>().Uint32Value();
 	}
 
 	for (size_t i = 0; i < _params.channels; i++)
