@@ -288,6 +288,8 @@ The `this.port` property is a `MessagePort` and also handle passing a second arg
 git submodule update --init --recursive
 git clone https://github.com/djg/cubeb-pulse-rs.git vendor/cubeb/src/cubeb-pulse-rs
 git clone https://github.com/ChunMinChang/cubeb-coreaudio-rs vendor/cubeb/src/cubeb-coreaudio-rs
+cd vendor/cubeb
+git apply ../cmake_rust.patch
 ```
 
 ### Requirements for source build
