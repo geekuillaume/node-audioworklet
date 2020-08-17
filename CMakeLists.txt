@@ -33,6 +33,7 @@ ENDIF()
 set(BUILD_TESTS OFF CACHE BOOL "test")
 set(BUILD_TOOLS OFF CACHE BOOL "test")
 set(BUILD_SHARED_LIBS ON CACHE BOOL "test")
+set(BUILD_RUST_LIBS ON CACHE BOOL "test")
 
 add_subdirectory(vendor/cubeb cubeb)
 include_directories(vendor/cubeb)

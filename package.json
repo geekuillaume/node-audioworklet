@@ -5,9 +5,9 @@
 	"main": "src/index.js",
 	"types": "src/index.d.ts",
 	"scripts": {
-		"build": "cmake-js compile",
+		"build": "cmake-js build -G \"Unix Makefiles\"",
 		"build:doc": "typedoc src",
-		"build:debug": "cmake-js compile -D",
+		"build:debug": "cmake-js build -G \"Unix Makefiles\" -D",
 		"install": "prebuild-install --target 4 -r napi || npm run build",
 		"deploy": "np --no-tests",
 		"build-binaries": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
