@@ -14,6 +14,6 @@ const main = async () => {
   setTimeout(() => {
     console.log('exiting');
     process.exit(0);
-  }, 1000);
+  }, 10000);
 }
 main();

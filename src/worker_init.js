@@ -21,6 +21,7 @@ if (workerModule.default) {
 }
 
 const worker = new WorkerClass();
+worker.getLatency = () => audioworklet.AudioStream._getLatencyFromExternal(streamPtr);
 audioworklet.AudioStream._setProcessFunctionFromExternal(streamPtr, worker.process.bind(worker));
 
 

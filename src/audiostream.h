@@ -33,6 +33,7 @@ public:
 
 	Napi::Value _getExternal(const Napi::CallbackInfo& info);
 	static void _setProcessFunctionFromExternal(const Napi::CallbackInfo& info);
+	static Napi::Value _getLatencyFromExternal(const Napi::CallbackInfo& info);
 
 private:
 	cubeb_stream *_stream;

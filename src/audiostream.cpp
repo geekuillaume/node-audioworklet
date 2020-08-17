@@ -133,6 +133,7 @@ void AudioStream::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *regi
 
         InstanceMethod("_getExternal", &AudioStream::_getExternal),
         StaticMethod("_setProcessFunctionFromExternal", &AudioStream::_setProcessFunctionFromExternal),
+        StaticMethod("_getLatencyFromExternal", &AudioStream::_getLatencyFromExternal),
       }, registry);
 
   // Set the class's ctor function as a persistent object to keep it in memory
@@ -392,8 +393,7 @@ Napi::Value AudioStream::getLatency(const Napi::CallbackInfo &info)
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while getting latency");
 	}
-
-	return Napi::Number::New(info.Env(), latencyInFrames);
+	return Napi::Number::New(info.Env(), latencyInFrames + (CircularBufferGetDataSize(_audioBuffer) / bytesPerFormat(_params.format) / _params.channels));
 }
 
 void AudioStream::_setProcessFunction(const Napi::Env &env)
@@ -455,3 +455,24 @@ void AudioStream::_setProcessFunctionFromExternal(const Napi::CallbackInfo& info
 	wrap->_processfnMutex.unlock();
 }
 
+Napi::Value AudioStream::_getLatencyFromExternal(const Napi::CallbackInfo& info)
+{
+	if (info.Length() != 1 || !info[0].IsArrayBuffer()) {
+		throw Napi::Error::New(info.Env(), "One arguments should be passed: external instance");
+	}
+
+	AudioStream *wrap = *static_cast<AudioStream **>(info[0].As<Napi::ArrayBuffer>().Data());
+	uint32_t latencyInFrames;
+	int err;
+
+	if (wrap->_isInput) {
+		err = cubeb_stream_get_input_latency(wrap->_stream, &latencyInFrames);
+	} else {
+		err = cubeb_stream_get_latency(wrap->_stream, &latencyInFrames);
+	}
+
+	if (err != CUBEB_OK) {
+		throw Napi::Error::New(info.Env(), "Error while getting latency");
+	}
+	return Napi::Number::New(info.Env(), latencyInFrames + (CircularBufferGetDataSize(wrap->_audioBuffer) / bytesPerFormat(wrap->_params.format) / wrap->_params.channels));
+}

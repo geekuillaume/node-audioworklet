@@ -3,6 +3,9 @@ const {AudioWorkletProcessor} = require('../../');
 class WhiteNoiseProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
+    setInterval(() => {
+      console.log('Latency from worker:', this.getLatency());
+    }, 1000);
   }
 
   process(outputChannels) {
@@ -10,8 +13,6 @@ class WhiteNoiseProcessor extends AudioWorkletProcessor {
       outputChannels[0][sample] = Math.random();
       outputChannels[1][sample] = Math.random();
     }
-    console.log('coucou', outputChannels);
-
     return true;
   }
 }

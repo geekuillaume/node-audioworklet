@@ -97,5 +97,6 @@ export declare abstract class AudioWorkletProcessor {
 	constructor();
 
 	port: MessagePort;
+	getLatency: () => number;
 	abstract process(inputOrOutputChannels: TypedArray[]): boolean;
 }
