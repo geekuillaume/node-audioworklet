@@ -209,7 +209,7 @@ AudioStream::AudioStream(
 	_params.layout = CUBEB_LAYOUT_UNDEFINED;
 	_params.prefs = CUBEB_STREAM_PREF_NONE;
 
-	if (device->type == CUBEB_DEVICE_TYPE_OUTPUT) {
+	if (device->type == CUBEB_DEVICE_TYPE_OUTPUT && _isInput) {
 		_params.prefs = CUBEB_STREAM_PREF_LOOPBACK;
 	}
 
