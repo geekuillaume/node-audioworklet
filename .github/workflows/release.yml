@@ -67,24 +67,24 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./scripts/build_for_arch.sh
 
-  prebuild-lib-arm64v8:
-    name: Prebuild lib arm64v8
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out Git repository
-      uses: actions/checkout@v1
+  # prebuild-lib-arm64v8:
+  #   name: Prebuild lib arm64v8
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Check out Git repository
+  #     uses: actions/checkout@v1
 
-    - name: Init submodules
-      run: |
-        git submodule update --init --recursive
-        git clone https://github.com/djg/cubeb-pulse-rs.git vendor/cubeb/src/cubeb-pulse-rs
-        git clone https://github.com/ChunMinChang/cubeb-coreaudio-rs vendor/cubeb/src/cubeb-coreaudio-rs
-        cd vendor/cubeb
-        git apply ../cmake_rust.patch
+  #   - name: Init submodules
+  #     run: |
+  #       git submodule update --init --recursive
+  #       git clone https://github.com/djg/cubeb-pulse-rs.git vendor/cubeb/src/cubeb-pulse-rs
+  #       git clone https://github.com/ChunMinChang/cubeb-coreaudio-rs vendor/cubeb/src/cubeb-coreaudio-rs
+  #       cd vendor/cubeb
+  #       git apply ../cmake_rust.patch
 
-    - name: Build for arm64v8
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        CROSS_ENV: arm64v8
-      run: ./scripts/build_for_arch.sh
+  #   - name: Build for arm64v8
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       CROSS_ENV: arm64v8
+  #     run: ./scripts/build_for_arch.sh
 
