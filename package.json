@@ -6,19 +6,22 @@
 	"types": "src/index.d.ts",
 	"scripts": {
 		"build": "run-script-os",
-		"build:default": "cmake-js build -G \"Unix Makefiles\"",
+		"build:default": "cmake-js build -G \"Unix Makefiles\" --CDBUILD_RUST_LIBS=ON",
 		"build:win32": "cmake-js build",
+
+		"build:norust": "cmake-js build",
 
 		"build:doc": "typedoc src",
 		"build:debug": "cmake-js build -G \"Unix Makefiles\" -D",
 
 		"install": "prebuild-install --target 4 -r napi || npm run build",
 		"deploy": "np --no-tests",
-		"build-binaries": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
-		"build-and-upload": "npm run build-and-upload-script-os",
-		"build-and-upload-script-os": " run-script-os",
-		"build-and-upload-script-os:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN",
-		"build-and-upload-script-os:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%"
+		"build-binaries": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -- --CDBUILD_RUST_LIBS=ON  -G \"Unix Makefiles\"",
+		"build-binaries-no-rust": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
+		"build-and-upload": "run-script-os",
+		"build-and-upload:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN -- --CDBUILD_RUST_LIBS=ON  -G \"Unix Makefiles\"",
+		"build-and-upload:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%",
+		"build-and-upload-no-rust": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN"
 	},
 	"repository": {
 		"type": "git",
