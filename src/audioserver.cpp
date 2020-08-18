@@ -141,7 +141,7 @@ Napi::Value AudioServerWrap::initOutputStream(const Napi::CallbackInfo& info)
 	cubeb_device_collection devices;
 	int err;
 
-	err = cubeb_enumerate_devices(_cubeb, (cubeb_device_type)(CUBEB_DEVICE_TYPE_OUTPUT | CUBEB_DEVICE_TYPE_INPUT), &devices);
+	err = cubeb_enumerate_devices(_cubeb, CUBEB_DEVICE_TYPE_OUTPUT, &devices);
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while enumerating devices");
 	}
@@ -172,7 +172,7 @@ Napi::Value AudioServerWrap::initInputStream(const Napi::CallbackInfo& info)
 	cubeb_device_collection devices;
 	int err;
 
-	err = cubeb_enumerate_devices(_cubeb, (cubeb_device_type)(CUBEB_DEVICE_TYPE_OUTPUT | CUBEB_DEVICE_TYPE_INPUT), &devices);
+	err = cubeb_enumerate_devices(_cubeb, CUBEB_DEVICE_TYPE_INPUT, &devices);
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while enumerating devices");
 	}
