@@ -16,8 +16,12 @@
 
 		"install": "prebuild-install --target 4 -r napi || npm run build",
 		"deploy": "np --no-tests",
-		"build-binaries": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -- --CDBUILD_RUST_LIBS=ON  -G \"Unix Makefiles\"",
+
+		"build-binaries": "run-script-os",
+		"build-binaries:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -- --CDBUILD_RUST_LIBS=ON  -G \"Unix Makefiles\"",
+		"build-binaries:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
 		"build-binaries-no-rust": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose",
+
 		"build-and-upload": "run-script-os",
 		"build-and-upload:default": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u $GITHUB_TOKEN -- --CDBUILD_RUST_LIBS=ON  -G \"Unix Makefiles\"",
 		"build-and-upload:win32": "prebuild -r napi -t 4 --backend cmake-js --include-regex \"^.*\\.(node|dylib|dll|so(\\.[0-9])?)$\" --verbose -u %GITHUB_TOKEN%",
