@@ -27,6 +27,7 @@ public:
 	Napi::Value getApi(const Napi::CallbackInfo& info);
 	Napi::Value initInputStream(const Napi::CallbackInfo& info);
 	Napi::Value initOutputStream(const Napi::CallbackInfo& info);
+	Napi::Value outputLoopbackSupported(const Napi::CallbackInfo& info);
 
 	friend void device_collection_changed_handler(cubeb *context, void *user_ptr);
 

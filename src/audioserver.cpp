@@ -11,6 +11,7 @@ void AudioServerWrap::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *
 			InstanceMethod("getDevices", &AudioServerWrap::getDevices),
 			InstanceMethod("initInputStream", &AudioServerWrap::initInputStream),
 			InstanceMethod("initOutputStream", &AudioServerWrap::initOutputStream),
+			InstanceMethod("outputLoopbackSupported", &AudioServerWrap::outputLoopbackSupported),
 
 			StaticValue("S16LE", Napi::Number::New(env, CUBEB_SAMPLE_S16LE)),
 			StaticValue("S16BE", Napi::Number::New(env, CUBEB_SAMPLE_S16BE)),
@@ -54,6 +55,7 @@ AudioServerWrap::AudioServerWrap(
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while creating instance");
 	}
+	cubeb_register_device_collection_changed(_cubeb, (cubeb_device_type)(CUBEB_DEVICE_TYPE_INPUT | CUBEB_DEVICE_TYPE_OUTPUT), device_collection_changed_handler, this);
 }
 
 AudioServerWrap::~AudioServerWrap()
@@ -126,7 +128,6 @@ Napi::Value AudioServerWrap::getDevices(const Napi::CallbackInfo &info)
 
 	cubeb_device_collection_destroy(_cubeb, &inputDevices);
 	cubeb_device_collection_destroy(_cubeb, &outputDevices);
-	cubeb_register_device_collection_changed(_cubeb, (cubeb_device_type)(CUBEB_DEVICE_TYPE_INPUT | CUBEB_DEVICE_TYPE_OUTPUT), device_collection_changed_handler, this);
 
 	return devices;
 }
@@ -172,7 +173,9 @@ Napi::Value AudioServerWrap::initInputStream(const Napi::CallbackInfo& info)
 	cubeb_device_collection devices;
 	int err;
 
-	err = cubeb_enumerate_devices(_cubeb, CUBEB_DEVICE_TYPE_INPUT, &devices);
+	bool isLoopback = !info[2].IsUndefined() && !info[2].IsNull() ? info[2].As<Napi::Boolean>().Value() : false;
+
+	err = cubeb_enumerate_devices(_cubeb, isLoopback ? CUBEB_DEVICE_TYPE_OUTPUT : CUBEB_DEVICE_TYPE_INPUT, &devices);
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while enumerating devices");
 	}
@@ -180,9 +183,6 @@ Napi::Value AudioServerWrap::initInputStream(const Napi::CallbackInfo& info)
 	for (unsigned int i = 0; i < devices.count; i++)
 	{
 		if (info[0].As<Napi::String>().Utf8Value().compare(devices.device[i].device_id) == 0) {
-			if (devices.device[i].type != CUBEB_DEVICE_TYPE_INPUT) {
-				throw Napi::Error::New(info.Env(), "This is an output device but required an input stream");
-			}
 			Napi::Value ret = registry->AudioStreamConstructor.New({
 				info.This(),
 				Napi::External<cubeb>::New(info.Env(), _cubeb),
@@ -205,4 +205,10 @@ void device_collection_changed_handler(cubeb *context, void *user_ptr)
 	if (wrap->_deviceChangeHandler) {
 		wrap->_deviceChangeHandler.BlockingCall();
 	}
+}
+
+Napi::Value AudioServerWrap::outputLoopbackSupported(const Napi::CallbackInfo& info)
+{
+	bool isSupported = !strcmp(cubeb_get_backend_id(_cubeb), "wasapi");
+	return Napi::Boolean::New(info.Env(), isSupported);
 }

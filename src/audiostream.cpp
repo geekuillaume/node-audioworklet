@@ -209,6 +209,10 @@ AudioStream::AudioStream(
 	_params.layout = CUBEB_LAYOUT_UNDEFINED;
 	_params.prefs = CUBEB_STREAM_PREF_NONE;
 
+	if (device->type == CUBEB_DEVICE_TYPE_OUTPUT) {
+		_params.prefs = CUBEB_STREAM_PREF_LOOPBACK;
+	}
+
 	if (!opts.Get("format").IsNull() && !opts.Get("format").IsUndefined()) {
 		_params.format = (cubeb_sample_format)opts.Get("format").As<Napi::Number>().Int32Value();
 		if (device->format & _params.format == 0) {
@@ -290,7 +294,10 @@ AudioStream::AudioStream(
 	}
 
 	if (err != CUBEB_OK) {
-		throw Napi::Error::New(info.Env(), "Error while starting stream");
+		if (err == CUBEB_ERROR_NOT_SUPPORTED) {
+			Napi::Error::New(info.Env(), "Options not supported").ThrowAsJavaScriptException();
+		}
+		Napi::Error::New(info.Env(), "Error while starting stream").ThrowAsJavaScriptException();;
 	}
 
 	_audioBuffer = CircularBufferCreate(

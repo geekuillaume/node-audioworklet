@@ -53,7 +53,8 @@ export declare class AudioServer {
 	getDevices(): AudioDevicesResponse;
 	getDefaultOutputDevice(): AudioDevice;
 	getDefaultInputDevice(): AudioDevice;
-	initInputStream(deviceId: string, params?: StreamParams): AudioStream;
+	outputLoopbackSupported(): boolean;
+	initInputStream(deviceId: string, params?: StreamParams, outputDeviceLoopback?: boolean): AudioStream;
 	initOutputStream(deviceId: string, params?: StreamParams): AudioStream;
 }
 
