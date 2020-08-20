@@ -85,7 +85,7 @@ Napi::Value AudioServerWrap::setDebugLog(const Napi::CallbackInfo &info) {
 Napi::Object tranformCubebDevice(Napi::Env env, cubeb_device_info *cubebDevice) {
 	Napi::Object device = Napi::Object::New(env);
 	device.Set("id", Napi::String::New(env, cubebDevice->device_id));
-	device.Set("name", Napi::String::New(env, cubebDevice->friendly_name));
+	device.Set("name", Napi::String::New(env, cubebDevice->friendly_name ? cubebDevice->friendly_name : "unknown"));
 
 	Napi::Object preferred = Napi::Object::New(env);
 	preferred.Set("multimedia", Napi::Boolean::New(env, cubebDevice->preferred & CUBEB_DEVICE_PREF_MULTIMEDIA));
