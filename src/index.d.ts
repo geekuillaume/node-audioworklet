@@ -56,6 +56,8 @@ export declare class AudioServer {
 	outputLoopbackSupported(): boolean;
 	initInputStream(deviceId: string, params?: StreamParams, outputDeviceLoopback?: boolean): AudioStream;
 	initOutputStream(deviceId: string, params?: StreamParams): AudioStream;
+
+	static setDebugLog(enabled?: boolean): void;
 }
 
 export declare class AudioDevice {

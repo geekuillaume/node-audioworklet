@@ -31,6 +31,8 @@ public:
 
 	friend void device_collection_changed_handler(cubeb *context, void *user_ptr);
 
+	static Napi::Value setDebugLog(const Napi::CallbackInfo& info);
+
 	cubeb	*_cubeb;
 
 private:

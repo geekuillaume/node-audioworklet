@@ -1,3 +1,4 @@
+#include <cstdarg>
 #include "audioserver.h"
 
 // #include <bits/stdc++.h>
@@ -12,6 +13,8 @@ void AudioServerWrap::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *
 			InstanceMethod("initInputStream", &AudioServerWrap::initInputStream),
 			InstanceMethod("initOutputStream", &AudioServerWrap::initOutputStream),
 			InstanceMethod("outputLoopbackSupported", &AudioServerWrap::outputLoopbackSupported),
+
+			StaticMethod("setDebugLog", &AudioServerWrap::setDebugLog),
 
 			StaticValue("S16LE", Napi::Number::New(env, CUBEB_SAMPLE_S16LE)),
 			StaticValue("S16BE", Napi::Number::New(env, CUBEB_SAMPLE_S16BE)),
@@ -62,6 +65,22 @@ AudioServerWrap::~AudioServerWrap()
 {
 	cubeb_destroy(_cubeb);
 }
+
+void print_log(const char * msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  vprintf(msg, args);
+  va_end(args);
+}
+
+Napi::Value AudioServerWrap::setDebugLog(const Napi::CallbackInfo &info) {
+	if (info[0].IsNull() || info[0].IsUndefined() || info[0].As<Napi::Boolean>().Value() == true) {
+		cubeb_set_log_callback(CUBEB_LOG_VERBOSE, &print_log);
+	}
+	return info.Env().Undefined();
+}
+
 
 Napi::Object tranformCubebDevice(Napi::Env env, cubeb_device_info *cubebDevice) {
 	Napi::Object device = Napi::Object::New(env);
