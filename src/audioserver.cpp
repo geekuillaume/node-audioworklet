@@ -110,6 +110,7 @@ Napi::Object tranformCubebDevice(Napi::Env env, cubeb_device_info *cubebDevice) 
 	device.Set("maxLatency", Napi::Number::New(env, cubebDevice->latency_hi));
 	device.Set("groupId", Napi::String::New(env, cubebDevice->group_id ? cubebDevice->group_id : ""));
 	device.Set("defaultFormat", Napi::Number::New(env, cubebDevice->default_format));
+	device.Set("state", Napi::String::New(env, cubebDevice->state == CUBEB_DEVICE_STATE_DISABLED ? "disabled" : cubebDevice->state == CUBEB_DEVICE_STATE_UNPLUGGED ? "unplugged" : "enabled"));
 	return device;
 }
 
