@@ -60,6 +60,8 @@ export declare class AudioServer {
 	static setDebugLog(enabled?: boolean): void;
 }
 
+export type AudioDeviceState = "enabled" | "unplugged" | "disabled";
+
 export declare class AudioDevice {
 	name: string;
 	id: string;
@@ -71,6 +73,7 @@ export declare class AudioDevice {
 	maxLatency: number;
 	groupId: string;
 	defaultFormat: AudioFormat;
+	state: AudioDeviceState;
 	preferred: {
 		multimedia: boolean;
 		voice: boolean;
