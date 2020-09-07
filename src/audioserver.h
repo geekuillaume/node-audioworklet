@@ -37,7 +37,6 @@ public:
 
 private:
 	inline static Napi::FunctionReference constructor;
-	Napi::Reference<Napi::Value> _ownRef;
 	Napi::ThreadSafeFunction _deviceChangeHandler;
 	ClassRegistry *registry;
 };

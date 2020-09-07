@@ -1,6 +1,7 @@
 #include <future>
 
 #include "audiostream.h"
+#include "debug.h"
 
 long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffer, void *output_buffer, long nframes)
 {
@@ -171,10 +172,14 @@ void state_callback_js(const Napi::CallbackInfo& info)
 	AudioStream *wrap = info[0].As<Napi::External<AudioStream>>().Data();
 	cubeb_state state = (cubeb_state)info[1].As<Napi::Number>().Int32Value();
 	if (state == CUBEB_STATE_DRAINED) {
+		debug_print("Stream drained, cleaning\n");
 		cubeb_stream_stop(wrap->_stream);
 		wrap->_ownRef.Unref();
+		wrap->_parentRef.Unref();
 		wrap->_stateCallbackfn.Release();
 		wrap->_isStarted = false;
+		cubeb_stream_destroy(wrap->_stream);
+		wrap->_stream = nullptr;
 		if (wrap->_processFramefn) {
 			wrap->_processfnMutex.lock();
 			wrap->_processFramefn.Release();
@@ -309,7 +314,10 @@ AudioStream::AudioStream(
 
 AudioStream::~AudioStream()
 {
-	cubeb_stream_destroy(_stream);
+	debug_print("Audio stream destroyed\n");
+	if (_stream != nullptr) {
+		cubeb_stream_destroy(_stream);
+	}
 	CircularBufferFree(_audioBuffer);
 }
 
@@ -368,6 +376,9 @@ void AudioStream::start(const Napi::CallbackInfo &info)
 
 void AudioStream::setVolume(const Napi::CallbackInfo &info)
 {
+	if (_stream == nullptr) {
+		throw Napi::Error::New(info.Env(), "Stream closed");
+	}
 	if (info[0].IsNull() || info[0].IsUndefined()) {
 		throw Napi::Error::New(info.Env(), "First argument should be the volume");
 	}
@@ -388,6 +399,9 @@ void AudioStream::setVolume(const Napi::CallbackInfo &info)
 
 Napi::Value AudioStream::getLatency(const Napi::CallbackInfo &info)
 {
+	if (_stream == nullptr) {
+		throw Napi::Error::New(info.Env(), "Stream closed");
+	}
 	uint32_t latencyInFrames;
 	int err;
 
@@ -469,6 +483,9 @@ Napi::Value AudioStream::_getLatencyFromExternal(const Napi::CallbackInfo& info)
 	}
 
 	AudioStream *wrap = *static_cast<AudioStream **>(info[0].As<Napi::ArrayBuffer>().Data());
+	if (wrap->_stream == nullptr) {
+		throw Napi::Error::New(info.Env(), "Stream closed");
+	}
 	uint32_t latencyInFrames;
 	int err;
 

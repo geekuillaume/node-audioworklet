@@ -35,6 +35,9 @@ const main = async () => {
   outputStream.start();
 
   const triggerBeep = () => {
+    if (!outputStream.isStarted()) {
+      return;
+    }
     currentPitch = pitch;
     const latency = outputStream.getLatency();
     console.log(`Latency: ${latency} frames - ${Math.round((latency / sampleRate) * 1000)}ms`);
@@ -51,9 +54,6 @@ const main = async () => {
   setTimeout(() => {
     console.log('Stopping stream');
     streamStatus = false;
-    setTimeout(() => {
-      process.exit(0);
-    }, 1000);
   }, 10000);
 }
 main();

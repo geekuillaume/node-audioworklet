@@ -1,5 +1,6 @@
 #include <cstdarg>
 #include "audioserver.h"
+#include "debug.h"
 
 // #include <bits/stdc++.h>
 // #include <sys/time.h>
@@ -36,7 +37,6 @@ AudioServerWrap::AudioServerWrap(
 	Napi::ObjectWrap<AudioServerWrap>(info)
 {
 	registry = static_cast<ClassRegistry *>(info.Data());
-	_ownRef = Napi::Reference<Napi::Value>::New(info.This()); // this is used to prevent the GC to collect this object while a stream is running
 	Napi::Object opts = info[0].As<Napi::Object>();
 	int err;
 
@@ -63,6 +63,7 @@ AudioServerWrap::AudioServerWrap(
 
 AudioServerWrap::~AudioServerWrap()
 {
+	debug_print("Audio server destroyed\n");
 	cubeb_destroy(_cubeb);
 }
 
