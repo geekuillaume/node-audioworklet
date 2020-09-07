@@ -35,6 +35,11 @@ jobs:
         if: "runner.os == 'Linux'"
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev libpulse-dev
 
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+        with:
+          vs-version: '[16.6,16.7)'
+
       - name: Install deps
         shell: bash
         run: yarn
