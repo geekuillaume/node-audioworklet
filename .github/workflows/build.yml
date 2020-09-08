@@ -49,7 +49,17 @@ jobs:
           yarn
 
       - name: Build
+        if: "runner.os != 'Windows'"
         run: yarn build-binaries
+
+      - name: Build (Windows)
+        if: "runner.os == 'Windows'"
+        shell: powershell
+        run: |
+          Remove-Item Env:\NPM_CONFIG_CACHE
+          Remove-Item Env:\NPM_CONFIG_PREFIX
+          yarn build-binaries
+
 
   prebuild-lib-armv7:
     name: Prebuild lib ARMv7

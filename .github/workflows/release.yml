@@ -40,12 +40,32 @@ jobs:
 
       - name: Install deps
         shell: bash
+        if: "runner.os != 'Windows'"
         run: yarn
 
-      - name: Build
+      - name: Install deps (Windows)
+        if: "runner.os == 'Windows'"
+        shell: powershell
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Remove-Item Env:\NPM_CONFIG_CACHE
+          Remove-Item Env:\NPM_CONFIG_PREFIX
+          yarn
+
+      - name: Build
+        if: "runner.os != 'Windows'"
         run: yarn build-and-upload
+
+      - name: Build (Windows)
+        if: "runner.os == 'Windows'"
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Remove-Item Env:\NPM_CONFIG_CACHE
+          Remove-Item Env:\NPM_CONFIG_PREFIX
+          yarn build-and-upload
 
   prebuild-lib-armv7:
     name: Prebuild lib ARMv7
