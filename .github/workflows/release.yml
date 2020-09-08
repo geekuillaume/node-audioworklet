@@ -41,6 +41,8 @@ jobs:
       - name: Install deps
         shell: bash
         if: "runner.os != 'Windows'"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: yarn
 
       - name: Install deps (Windows)
