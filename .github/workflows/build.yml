@@ -37,6 +37,8 @@ jobs:
 
       - name: Install deps
         shell: bash
+        env:
+          NPM_CONFIG_CACHE: ""
         run: yarn
 
       - name: Build
