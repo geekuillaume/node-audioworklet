@@ -44,7 +44,7 @@ jobs:
         if: "runner.os == 'Windows'"
         shell: powershell
         run: |
-          Remove-Item Env:\MyTestVariable
+          Remove-Item Env:\NPM_CONFIG_CACHE
           yarn
 
       - name: Build
