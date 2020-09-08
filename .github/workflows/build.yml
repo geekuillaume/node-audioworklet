@@ -35,15 +35,17 @@ jobs:
         if: "runner.os == 'Linux'"
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev libpulse-dev
 
-      - name: Show env
-        shell: bash
-        run: env
-
       - name: Install deps
         shell: bash
-        env:
-          NPM_CONFIG_CACHE: ""
+        if: "runner.os != 'Windows'"
         run: yarn
+
+      - name: Install deps (Windows)
+        if: "runner.os == 'Windows'"
+        shell: powershell
+        run: |
+          Remove-Item Env:\MyTestVariable
+          yarn
 
       - name: Build
         run: yarn build-binaries
