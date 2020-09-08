@@ -41,15 +41,11 @@ jobs:
       - name: Install deps
         shell: bash
         if: "runner.os != 'Windows'"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: yarn
 
       - name: Install deps (Windows)
         if: "runner.os == 'Windows'"
         shell: powershell
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Remove-Item Env:\NPM_CONFIG_CACHE
           Remove-Item Env:\NPM_CONFIG_PREFIX
@@ -58,6 +54,8 @@ jobs:
       - name: Build
         if: "runner.os != 'Windows'"
         run: yarn build-and-upload
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build (Windows)
         if: "runner.os == 'Windows'"
