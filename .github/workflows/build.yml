@@ -45,6 +45,7 @@ jobs:
         shell: powershell
         run: |
           Remove-Item Env:\NPM_CONFIG_CACHE
+          Remove-Item Env:\NPM_CONFIG_PREFIX
           yarn
 
       - name: Build
