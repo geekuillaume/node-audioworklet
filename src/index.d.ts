@@ -39,6 +39,9 @@ interface StreamParams {
 
 	/** size of the buffer in frames */
 	latencyFrames?: number;
+
+	/** prevent device switch by OS on disconnect */
+	disableSwitching?: boolean;
 }
 
 export declare class AudioServer {

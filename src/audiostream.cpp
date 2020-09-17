@@ -218,6 +218,12 @@ AudioStream::AudioStream(
 		_params.prefs = CUBEB_STREAM_PREF_LOOPBACK;
 	}
 
+	if (!opts.Get("disableSwitching").IsNull() && !opts.Get("disableSwitching").IsUndefined()) {
+		if (opts.Get("disableSwitching").As<Napi::Boolean>().Value()) {
+			_params.prefs = (cubeb_stream_prefs)(_params.prefs & CUBEB_STREAM_PREF_DISABLE_DEVICE_SWITCHING);
+		}
+	}
+
 	if (!opts.Get("format").IsNull() && !opts.Get("format").IsUndefined()) {
 		_params.format = (cubeb_sample_format)opts.Get("format").As<Napi::Number>().Int32Value();
 		if (device->format & _params.format == 0) {
