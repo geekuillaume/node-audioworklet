@@ -232,9 +232,6 @@ AudioStream::AudioStream(
 	}
 	if (!opts.Get("sampleRate").IsNull() && !opts.Get("sampleRate").IsUndefined()) {
 		_params.rate = opts.Get("sampleRate").As<Napi::Number>().Uint32Value();
-		if (_params.rate < device->min_rate || _params.rate > device->max_rate) {
-			throw Napi::Error::New(info.Env(), "sample rate not supported");
-		}
 	}
 	if (!opts.Get("channels").IsNull() && !opts.Get("channels").IsUndefined()) {
 		_params.channels = opts.Get("channels").As<Napi::Number>().Uint32Value();
