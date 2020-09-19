@@ -44,6 +44,7 @@ private:
 	uint32_t 	_streamFrameSize;
 	std::vector<std::vector<uint8_t>>	_streamJsBuffer;
 	std::vector<int8_t> _interleavedBuffer;
+	Napi::Reference<Napi::Array> _channelsDataRef;
 
 	bool _isStarted;
 	std::mutex _processfnMutex;

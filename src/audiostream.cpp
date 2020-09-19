@@ -1,4 +1,5 @@
 #include <future>
+#include <assert.h>
 
 #include "audiostream.h"
 #include "debug.h"
@@ -10,7 +11,7 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 	if (!wrap->_isStarted) {
 		return 0;
 	}
-	std::vector<std::vector<uint8_t>> &streamJsBuffer = wrap->_streamJsBuffer;
+	auto &streamJsBuffer = wrap->_streamJsBuffer;
 	cubeb_sample_format format = wrap->_params.format;
 	int framesPerJsCall = wrap->_streamFrameSize;
 	int bytesPerSample = bytesPerFormat(format);
@@ -51,21 +52,9 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 		}
 
 		wrap->_processfnMutex.lock();
-		auto processStatus = wrap->_processFramefn.BlockingCall([format, &streamJsBuffer, framesPerJsCall, &processPromise](Napi::Env env, Napi::Function callback) {
-			Napi::Array channelsData = Napi::Array::New(env, streamJsBuffer.size());
-			for (size_t channel = 0; channel < streamJsBuffer.size(); channel++)
-			{
-				Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, streamJsBuffer[channel].data(), streamJsBuffer[channel].size());
-
-				if (format == CUBEB_SAMPLE_S16LE || format == CUBEB_SAMPLE_S16BE) {
-					channelsData[channel] = Napi::TypedArrayOf<uint16_t>::New(env, framesPerJsCall, buffer, 0);
-				} else if (format == CUBEB_SAMPLE_FLOAT32LE || format == CUBEB_SAMPLE_FLOAT32BE) {
-					channelsData[channel] = Napi::TypedArrayOf<float>::New(env, framesPerJsCall, buffer, 0);
-				}
-			}
-
+		auto processStatus = wrap->_processFramefn.BlockingCall([wrap, &processPromise](Napi::Env env, Napi::Function callback) {
 			Napi::Value retValue = callback.Call({
-				channelsData,
+				wrap->_channelsDataRef.Value(),
 			});
 
 			if (!retValue.IsBoolean()) {
@@ -73,15 +62,16 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 			}
 			processPromise.set_value(retValue.As<Napi::Boolean>().Value());
 		});
-		wrap->_processfnMutex.unlock();
 
 		if ( processStatus != napi_ok )
 		{
+			wrap->_processfnMutex.unlock();
 			return 0;
 		} else {
 			// struct timespec start, end;
 			// clock_gettime(CLOCK_MONOTONIC, &start);
 			processFuture.wait();
+			wrap->_processfnMutex.unlock();
 			// clock_gettime(CLOCK_MONOTONIC, &end);
 
 			// double time_taken;
@@ -432,6 +422,18 @@ void AudioStream::_setProcessFunction(const Napi::Env &env)
 			// prevent a segfault on exit when the write thread want to access a non-existing threadsafefunction
 			_processFramefn = nullptr;
 	});
+	Napi::Array _channelsData = Napi::Array::New(env, _streamJsBuffer.size());
+	for (size_t channel = 0; channel < _streamJsBuffer.size(); channel++)
+	{
+		Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, _streamJsBuffer[channel].data(), _streamJsBuffer[channel].size());
+
+		if (_params.format == CUBEB_SAMPLE_S16LE || _params.format == CUBEB_SAMPLE_S16BE) {
+			_channelsData[channel] = Napi::TypedArrayOf<uint16_t>::New(env, _streamFrameSize, buffer, 0);
+		} else if (_params.format == CUBEB_SAMPLE_FLOAT32LE || _params.format == CUBEB_SAMPLE_FLOAT32BE) {
+			_channelsData[channel] = Napi::TypedArrayOf<float>::New(env, _streamFrameSize, buffer, 0);
+		}
+	}
+	_channelsDataRef = Napi::Reference<Napi::Array>::New(_channelsData, 1);
 	// _processFctRef.Unref();
 }
 
