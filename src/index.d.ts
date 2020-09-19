@@ -92,6 +92,7 @@ export declare class AudioStream {
 	isStarted(): boolean;
 
 	getLatency(): number;
+	getPosition(): number;
 	setVolume(volume: number): void;
 	setProcessFunction(process: ((outputChannels: Buffer[]) => boolean)): void;
 

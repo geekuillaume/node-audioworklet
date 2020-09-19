@@ -120,6 +120,7 @@ void AudioStream::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *regi
         InstanceMethod("setProcessFunction", &AudioStream::setProcessFunction),
 
         InstanceMethod("getLatency", &AudioStream::getLatency),
+        InstanceMethod("getPosition", &AudioStream::getPosition),
         InstanceMethod("setVolume", &AudioStream::setVolume),
 
         InstanceMethod("_getExternal", &AudioStream::_getExternal),
@@ -403,6 +404,23 @@ Napi::Value AudioStream::getLatency(const Napi::CallbackInfo &info)
 	}
 	return Napi::Number::New(info.Env(), latencyInFrames + (CircularBufferGetDataSize(_audioBuffer) / bytesPerFormat(_params.format) / _params.channels));
 }
+
+Napi::Value AudioStream::getPosition(const Napi::CallbackInfo &info)
+{
+	if (_stream == nullptr) {
+		throw Napi::Error::New(info.Env(), "Stream closed");
+	}
+	uint64_t positionInFrames;
+	int err;
+
+	err = cubeb_stream_get_position(_stream, &positionInFrames);
+
+	if (err != CUBEB_OK) {
+		throw Napi::Error::New(info.Env(), "Error while getting position");
+	}
+	return Napi::Number::New(info.Env(), positionInFrames);
+}
+
 
 void AudioStream::_setProcessFunction(const Napi::Env &env)
 {

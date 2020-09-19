@@ -25,6 +25,7 @@ public:
 	void stop(const Napi::CallbackInfo &info);
 	void setVolume(const Napi::CallbackInfo &info);
 	Napi::Value getLatency(const Napi::CallbackInfo& info);
+	Napi::Value getPosition(const Napi::CallbackInfo& info);
 	void setProcessFunction(const Napi::CallbackInfo& info);
 
 	friend long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffer, void *output_buffer, long nframes);
