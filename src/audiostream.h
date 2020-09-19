@@ -42,9 +42,9 @@ private:
 
 	uint32_t _configuredLatencyFrames;
 	uint32_t 	_streamFrameSize;
-	std::vector<std::vector<uint8_t>>	_streamJsBuffer;
 	std::vector<int8_t> _interleavedBuffer;
 	Napi::Reference<Napi::Array> _channelsDataRef;
+	std::vector<uint8_t *> _channelsDataRaw;
 
 	bool _isStarted;
 	std::mutex _processfnMutex;
