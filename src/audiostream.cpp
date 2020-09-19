@@ -15,7 +15,7 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 	int framesPerJsCall = wrap->_streamFrameSize;
 	int bytesPerSample = bytesPerFormat(format);
 	int bytesPerFrame = bytesPerSample * wrap->_params.channels;
-	int maxRequiredSize = (framesPerJsCall > nframes) ? framesPerJsCall : nframes;
+	int maxRequiredSize = ((framesPerJsCall > nframes) ? framesPerJsCall : nframes) * bytesPerFrame;
 	if (wrap->_interleavedBuffer.size() < maxRequiredSize) {
 		wrap->_interleavedBuffer.resize(maxRequiredSize);
 	}
