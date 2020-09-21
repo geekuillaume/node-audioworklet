@@ -55,6 +55,7 @@ private:
 	Napi::Reference<Napi::Value> _ownRef;
 	Napi::Reference<Napi::Value> _parentRef;
 	bool _isInput;
+	bool _logProcessTime;
 	CircularBuffer _audioBuffer;
 	cubeb_stream_params _params;
 };

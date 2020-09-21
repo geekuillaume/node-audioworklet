@@ -1,5 +1,7 @@
 #include <future>
 #include <assert.h>
+#include <chrono>
+#include <inttypes.h>
 
 #include "audiostream.h"
 #include "debug.h"
@@ -68,18 +70,15 @@ long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffe
 			wrap->_processfnMutex.unlock();
 			return 0;
 		} else {
-			// struct timespec start, end;
-			// clock_gettime(CLOCK_MONOTONIC, &start);
+			auto start = std::chrono::steady_clock::now();
 			processFuture.wait();
 			wrap->_processfnMutex.unlock();
-			// clock_gettime(CLOCK_MONOTONIC, &end);
-
-			// double time_taken;
-			// time_taken = (end.tv_sec - start.tv_sec) * 1e9;
-			// time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
-			// std::cout << "Time taken by process function is : " << std::fixed
-			// 		<< time_taken << std::setprecision(9);
-			// std::cout << " sec" << std::endl;
+			if (wrap->_logProcessTime) {
+				fprintf(stderr, "Process function execution time: %4dus, budget: %dus\n",
+					std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count(),
+					1000000 / (wrap->_params.rate / framesPerJsCall)
+				);
+			}
 		}
 
 		if (processFuture.get() == false) {
@@ -187,7 +186,8 @@ AudioStream::AudioStream(
 	_processFramefn(),
 	_streamFrameSize(48000 / 100),
 	_processFctRef(),
-	_isStarted(false)
+	_isStarted(false),
+	_logProcessTime(false)
 {
 	int err;
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This());
@@ -254,6 +254,10 @@ AudioStream::AudioStream(
 		_configuredLatencyFrames = opts.Get("latencyFrames").As<Napi::Number>().Uint32Value();
 	}
 	info.This().As<Napi::Object>().Set("configuredLatencyFrames", Napi::Number::New(info.Env(), _configuredLatencyFrames));
+
+	if (opts.Get("logProcessTime").IsBoolean()) {
+		_logProcessTime = opts.Get("logProcessTime").As<Napi::Boolean>();
+	}
 
 	_interleavedBuffer = std::vector<int8_t>(_streamFrameSize * bytesPerFormat(_params.format) * _params.channels, int8_t(0));
 

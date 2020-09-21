@@ -42,6 +42,8 @@ interface StreamParams {
 
 	/** prevent device switch by OS on disconnect */
 	disableSwitching?: boolean;
+
+	logProcessTime?: boolean;
 }
 
 export declare class AudioServer {
