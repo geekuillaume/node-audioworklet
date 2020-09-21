@@ -253,6 +253,7 @@ AudioStream::AudioStream(
 		}
 		_configuredLatencyFrames = opts.Get("latencyFrames").As<Napi::Number>().Uint32Value();
 	}
+	info.This().As<Napi::Object>().Set("configuredLatencyFrames", Napi::Number::New(info.Env(), _configuredLatencyFrames));
 
 	_interleavedBuffer = std::vector<int8_t>(_streamFrameSize * bytesPerFormat(_params.format) * _params.channels, int8_t(0));
 

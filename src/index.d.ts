@@ -101,6 +101,8 @@ export declare class AudioStream {
 	 * The module should export a class extending AudioWorkletProcessor with the process method implemented
 	 */
 	attachProcessFunctionFromWorker(scriptPath: string): Worker;
+
+	configuredLatencyFrames: number;
 }
 
 export declare abstract class AudioWorkletProcessor {
