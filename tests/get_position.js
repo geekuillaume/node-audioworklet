@@ -16,7 +16,7 @@ const main = async () => {
   });
 
   const worker = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/position.js'));
-  console.log(`Starting stream, start position: ${outputStream.getPosition()}, configured latency: ${outputStream.latencyFrames / (sampleRate / 1000)}`);
+  console.log(`Starting stream, start position: ${outputStream.getPosition()}, configured latency: ${outputStream.configuredLatencyFrames / (sampleRate / 1000)}`);
   outputStream.start();
 
   // worker.on('message', ({processPosition}) => {
@@ -30,7 +30,7 @@ const main = async () => {
 
   setInterval(() => {
     const now = performance.now();
-    const positionTime = Math.round((outputStream.getPosition() + outputStream.getLatency()) / (sampleRate / 1000));
+    const positionTime = Math.round(outputStream.getPosition() / (sampleRate / 1000));
     console.log(`Position: ${positionTime}ms, Diff from now: ${positionTime - now}`)
   }, 500);
 
