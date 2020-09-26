@@ -8,38 +8,33 @@ const main = async () => {
 
   const CHANNELS = 1;
   const SAMPLE_RATE = 48000;
-  const BUFFER_DURATION_IN_SECONDS = 20;
-  const buffer = new Float32Array(CHANNELS * SAMPLE_RATE * BUFFER_DURATION_IN_SECONDS);
-  let inPtr = SAMPLE_RATE * 2; // 2 seconds in the future
-  let outPtr = 0;
 
   const inputStream = audioServer.initInputStream(inDevice.id, {
     sampleRate: SAMPLE_RATE,
     format: AudioServer.F32LE,
-    channels: 1,
-    process: (inputChannels) => {
-      buffer.set(inputChannels[0], inPtr);
-      inPtr = (inPtr + inputChannels[0].length) % buffer.length;
-      return true;
-    },
+    channels: CHANNELS,
   });
 
   const outputStream = audioServer.initOutputStream(outDevice.id, {
     sampleRate: SAMPLE_RATE,
     format: AudioServer.F32LE,
-    process: (outputChannels) => {
-      outputChannels.forEach((channel) => {
-        channel.set(buffer.slice(outPtr, outPtr + outputChannels[0].length));
-      });
-      outPtr = (outPtr + outputChannels[0].length) % buffer.length;
-      return true;
-    }
+    channels: CHANNELS,
   });
 
   inputStream.start();
-  outputStream.start();
+
+  inputStream.registerReadHandler((buffer) => {
+    outputStream.pushAudioChunk(undefined, buffer);
+    // console.log(buffer.length);
+  });
 
   setTimeout(() => {
+    // let some time for the outputStream buffer to fill from the read handler
+    outputStream.start();
+  }, 500);
+
+  setTimeout(() => {
+    console.log('Stopping');
     inputStream.stop();
     outputStream.stop();
   }, 10000);

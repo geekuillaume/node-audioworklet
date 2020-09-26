@@ -10,16 +10,6 @@ let currentSample = 0;
 const pitch = 440;
 const radPerSecond = Math.PI * 2 * pitch;
 
-const processFrame = (outputChannels) => {
-  for (let sample = 0; sample < outputChannels[0].length; sample++) {
-    const sinSample = Math.sin(radPerSecond * (currentSample / 48000));
-    outputChannels.forEach((channel) => {
-      channel[sample] = sinSample;
-    });
-    currentSample += 1;
-  }
-  return streamStatus;
-}
 const audioServer = new AudioServer();
 
 const main = async () => {
@@ -27,13 +17,17 @@ const main = async () => {
   console.log(`Opening stream on device ${device.name}`);
   const stream = audioServer.initOutputStream(device.id, {
     format: AudioServer.F32LE,
-    process: processFrame,
     sampleRate: 48000,
     channels: 2,
   });
 
   console.log('Starting stream');
   stream.start();
+
+  setTimeout(() => {
+    console.log('Stopping stream');
+    stream.stop();
+  }, 500);
 }
 main();
 
@@ -42,10 +36,7 @@ setTimeout(() => {
   global.gc();
 }, 300);
 
-setTimeout(() => {
-  console.log('Stopping stream');
-  streamStatus = false;
-}, 500);
+
 
 setTimeout(() => {
   console.log('Garbage collection');
@@ -53,5 +44,5 @@ setTimeout(() => {
 }, 1200);
 
 setTimeout(() => {
-  console.log('exiting');
+  console.log('should exit');
 }, 1500);

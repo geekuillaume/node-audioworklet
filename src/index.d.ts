@@ -31,11 +31,7 @@ interface StreamParams {
 	/** number of samples per second per channel */
 	sampleRate?: number;
 
-	/** number of samples per channel to pass to the process function, if not set, will be dynamicly set on each frame to minimize the number of calls to the process function */
-	frameSize?: number;
-
 	name?: string;
-	process?: ((inputOrOutputChannels: TypedArray[]) => boolean);
 
 	/** size of the buffer in frames */
 	latencyFrames?: number;
@@ -96,13 +92,18 @@ export declare class AudioStream {
 	getLatency(): number;
 	getPosition(): number;
 	setVolume(volume: number): void;
-	setProcessFunction(process: ((outputChannels: Buffer[]) => boolean)): void;
 
-	/**
-	 * Start the module specified by scriptPath in a new worker thread and use it as the process function
-	 * The module should export a class extending AudioWorkletProcessor with the process method implemented
-	 */
-	attachProcessFunctionFromWorker(scriptPath: string): Worker;
+	/** Returns the number of pushed frames, could be lower than number of frames in the audio chunk if the buffer is full */
+	pushAudioChunk(timestamp?: number, interleavedAudioChunk: TypedArray): number;
+	/** Returns the number of read frames, could be lower than the destination size if the buffer is empty */
+	readAudioChunk(timestamp?: number, destination: TypedArray): number;
+
+	/** For an input stream returns the number of frames available to read, for an output stream returns the available size to write in frames in the buffer */
+	getBufferSize(): number;
+	getFormat(): AudioFormat;
+	getChannels(): number;
+
+	registerReadHandler(readHandler: (audioChunk: TypedArray) => void, options?: {interval: number}): void;
 
 	configuredLatencyFrames: number;
 }

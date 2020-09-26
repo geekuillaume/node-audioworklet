@@ -15,18 +15,8 @@ const main = async () => {
     format: AudioServer.F32LE,
   });
 
-  const worker = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/position.js'));
   console.log(`Starting stream, start position: ${outputStream.getPosition()}, configured latency: ${outputStream.configuredLatencyFrames / (sampleRate / 1000)}`);
   outputStream.start();
-
-  // worker.on('message', ({processPosition}) => {
-  //   if (messageIndex % MESSAGE_LOG_INTERVAL === 0) {
-  //     const positionTime = Math.round((outputStream.getPosition()) / (sampleRate / 1000));
-  //     const processPositionTime = Math.round(processPosition / (sampleRate / 1000));
-  //     console.log(`Position: ${positionTime}ms, diff from process position: ${positionTime - processPositionTime}, Diff from now: ${positionTime - performance.now()}`)
-  //   }
-  //   messageIndex++;
-  // })
 
   setInterval(() => {
     const now = performance.now();

@@ -4,106 +4,22 @@
 #include <inttypes.h>
 
 #include "audiostream.h"
+#include "utils.h"
 #include "debug.h"
 
 long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffer, void *output_buffer, long nframes)
 {
-	// printf("Needs to write %d frames\n", nframes);
 	AudioStream *wrap = (AudioStream *)user_ptr;
 	if (!wrap->_isStarted) {
 		return 0;
 	}
-	auto &_channelsDataRaw = wrap->_channelsDataRaw;
-	cubeb_sample_format format = wrap->_params.format;
-	int framesPerJsCall = wrap->_streamFrameSize;
-	int bytesPerSample = bytesPerFormat(format);
-	int bytesPerFrame = bytesPerSample * wrap->_params.channels;
-	int maxRequiredSize = ((framesPerJsCall > nframes) ? framesPerJsCall : nframes) * bytesPerFrame;
-	if (wrap->_interleavedBuffer.size() < maxRequiredSize) {
-		wrap->_interleavedBuffer.resize(maxRequiredSize);
-	}
-	char *interleavedBuffer = (char *)wrap->_interleavedBuffer.data();
-
-	if (!wrap->_processFramefn) {
-		return nframes;
-	}
-
 	if (wrap->_isInput) {
-		CircularBufferPush(wrap->_audioBuffer, (char *)input_buffer, nframes * bytesPerFrame);
+		wrap->_audioBuffer.get()->enqueueAudioBuffer(wrap->_timestamp, (uint8_t *)input_buffer, nframes);
+	} else {
+		int readFrames = wrap->_audioBuffer.get()->dequeueAudioBuffer(wrap->_timestamp, (uint8_t *)output_buffer, nframes);
 	}
-
-	while (wrap->_isInput ? (CircularBufferGetDataSize(wrap->_audioBuffer) > framesPerJsCall * bytesPerFrame) : (CircularBufferGetDataSize(wrap->_audioBuffer) < nframes * bytesPerFrame)) {
-		std::promise<bool> processPromise;
-		std::future<bool> processFuture = processPromise.get_future();
-
-		if (wrap->_isInput) {
-			// convert from one interleaved buffer to one buffer per channel
-			CircularBufferPop(wrap->_audioBuffer, framesPerJsCall * bytesPerFrame, interleavedBuffer);
-			for (int channel = 0; channel < wrap->_params.channels; channel += 1) {
-				uint8_t *channelData = _channelsDataRaw[channel];
-				for (int frame = 0; frame < framesPerJsCall; frame++) {
-					for (int sampleByte = 0; sampleByte < bytesPerSample; sampleByte++) {
-						channelData[(frame * bytesPerSample) + sampleByte] = interleavedBuffer[(((frame * wrap->_params.channels) + channel) * bytesPerSample) + sampleByte];
-					}
-				}
-			}
-		} else {
-			for (int channel = 0; channel < wrap->_params.channels; channel += 1) {
-				memset(_channelsDataRaw[channel], 0, framesPerJsCall * bytesPerSample);
-			}
-		}
-
-		wrap->_processfnMutex.lock();
-		auto processStatus = wrap->_processFramefn.BlockingCall([wrap, &processPromise](Napi::Env env, Napi::Function callback) {
-			Napi::Value retValue = callback.Call({
-				wrap->_channelsDataRef.Value(),
-			});
-
-			if (!retValue.IsBoolean()) {
-				throw Napi::Error::New(env, "Return value of process function should be a boolean");
-			}
-			processPromise.set_value(retValue.As<Napi::Boolean>().Value());
-		});
-
-		if ( processStatus != napi_ok )
-		{
-			wrap->_processfnMutex.unlock();
-			return 0;
-		} else {
-			auto start = std::chrono::steady_clock::now();
-			processFuture.wait();
-			wrap->_processfnMutex.unlock();
-			if (wrap->_logProcessTime) {
-				fprintf(stderr, "Process function execution time: %4dus, budget: %dus\n",
-					std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count(),
-					1000000 / (wrap->_params.rate / framesPerJsCall)
-				);
-			}
-		}
-
-		if (processFuture.get() == false) {
-			return 0;
-		}
-
-		if (!wrap->_isInput) {
-			// convert from one buffer per channel to one unique interleaved buffer
-			for (int channel = 0; channel < wrap->_params.channels; channel += 1) {
-				uint8_t *channelData = _channelsDataRaw[channel];
-				for (int frame = 0; frame < framesPerJsCall; frame++) {
-					for (int sampleByte = 0; sampleByte < bytesPerSample; sampleByte++) {
-						interleavedBuffer[(((frame * wrap->_params.channels) + channel) * bytesPerSample) + sampleByte] = channelData[(frame * bytesPerSample) + sampleByte];
-					}
-				}
-			}
-
-			CircularBufferPush(wrap->_audioBuffer, interleavedBuffer, framesPerJsCall * wrap->_params.channels * bytesPerSample);
-		}
-	}
-
-	if (!wrap->_isInput) {
-		CircularBufferPop(wrap->_audioBuffer, nframes * bytesPerFrame, (char *)output_buffer);
-	}
-  return nframes;
+	wrap->_timestamp += nframes;
+	return nframes;
 }
 
 void AudioStream::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *registry)
@@ -116,15 +32,17 @@ void AudioStream::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *regi
 
         InstanceMethod("start", &AudioStream::start),
         InstanceMethod("stop", &AudioStream::stop),
-        InstanceMethod("setProcessFunction", &AudioStream::setProcessFunction),
 
         InstanceMethod("getLatency", &AudioStream::getLatency),
         InstanceMethod("getPosition", &AudioStream::getPosition),
         InstanceMethod("setVolume", &AudioStream::setVolume),
 
-        InstanceMethod("_getExternal", &AudioStream::_getExternal),
-        StaticMethod("_setProcessFunctionFromExternal", &AudioStream::_setProcessFunctionFromExternal),
-        StaticMethod("_getLatencyFromExternal", &AudioStream::_getLatencyFromExternal),
+        InstanceMethod("pushAudioChunk", &AudioStream::pushAudioChunk),
+        InstanceMethod("readAudioChunk", &AudioStream::readAudioChunk),
+
+        InstanceMethod("getBufferSize", &AudioStream::getBufferSize),
+        InstanceMethod("getFormat", &AudioStream::getFormat),
+        InstanceMethod("getChannels", &AudioStream::getChannels),
       }, registry);
 
   // Set the class's ctor function as a persistent object to keep it in memory
@@ -132,16 +50,6 @@ void AudioStream::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *regi
   registry->AudioStreamConstructor.SuppressDestruct();
 
 	exports.Set("AudioStream", ctor_func);
-}
-
-int bytesPerFormat(cubeb_sample_format format) {
-	if (format == CUBEB_SAMPLE_S16LE || format == CUBEB_SAMPLE_S16BE) {
-		return 2;
-	}
-	if (format == CUBEB_SAMPLE_FLOAT32LE || format == CUBEB_SAMPLE_FLOAT32BE) {
-		return 4;
-	}
-	return 2;
 }
 
 void state_callback(cubeb_stream * stm, void *user_ptr, cubeb_state state)
@@ -161,7 +69,7 @@ void state_callback_js(const Napi::CallbackInfo& info)
 {
 	AudioStream *wrap = info[0].As<Napi::External<AudioStream>>().Data();
 	cubeb_state state = (cubeb_state)info[1].As<Napi::Number>().Int32Value();
-	if (state == CUBEB_STATE_DRAINED) {
+	if ((state == CUBEB_STATE_DRAINED || state == CUBEB_STATE_STOPPED) && wrap->_stream) {
 		debug_print("Stream drained, cleaning\n");
 		cubeb_stream_stop(wrap->_stream);
 		wrap->_ownRef.Unref();
@@ -170,11 +78,6 @@ void state_callback_js(const Napi::CallbackInfo& info)
 		wrap->_isStarted = false;
 		cubeb_stream_destroy(wrap->_stream);
 		wrap->_stream = nullptr;
-		if (wrap->_processFramefn) {
-			wrap->_processfnMutex.lock();
-			wrap->_processFramefn.Release();
-			wrap->_processfnMutex.unlock();
-		}
 	}
 }
 
@@ -183,11 +86,10 @@ AudioStream::AudioStream(
 	const Napi::CallbackInfo &info
 ) :
 	Napi::ObjectWrap<AudioStream>(info),
-	_processFramefn(),
-	_streamFrameSize(48000 / 100),
-	_processFctRef(),
 	_isStarted(false),
-	_logProcessTime(false)
+	_logProcessTime(false),
+	_timestamp(0),
+	_lastChunkTimestamp(0)
 {
 	int err;
 	_ownRef = Napi::Reference<Napi::Value>::New(info.This());
@@ -234,13 +136,6 @@ AudioStream::AudioStream(
 		name = opts.Get("name").As<Napi::String>().Utf8Value().c_str();
 	}
 
-	if (!opts.Get("process").IsNull() && !opts.Get("process").IsUndefined()) {
-		_processFctRef = Napi::Reference<Napi::Value>::New(opts.Get("process"), 1);
-	}
-	if (!opts.Get("frameSize").IsNull() && !opts.Get("frameSize").IsUndefined()) {
-		_streamFrameSize = opts.Get("frameSize").As<Napi::Number>();
-	}
-
 	err = cubeb_get_min_latency(_cubebContext, &_params, &_configuredLatencyFrames);
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while getting min latency");
@@ -258,8 +153,6 @@ AudioStream::AudioStream(
 	if (opts.Get("logProcessTime").IsBoolean()) {
 		_logProcessTime = opts.Get("logProcessTime").As<Napi::Boolean>();
 	}
-
-	_interleavedBuffer = std::vector<int8_t>(_streamFrameSize * bytesPerFormat(_params.format) * _params.channels, int8_t(0));
 
 	if (_isInput) {
 		err = cubeb_stream_init(
@@ -298,11 +191,7 @@ AudioStream::AudioStream(
 		Napi::Error::New(info.Env(), "Error while starting stream").ThrowAsJavaScriptException();;
 	}
 
-	_audioBuffer = CircularBufferCreate(
-		_params.rate * bytesPerFormat(_params.format) * _params.channels
-	);
-	CircularBufferReset(_audioBuffer);
-
+	_audioBuffer.reset(new AudioRingBuffer(10 * _params.rate, cubeb_sample_size(_params.format) * _params.channels)); // 10 seconds max buffer
 }
 
 AudioStream::~AudioStream()
@@ -311,7 +200,6 @@ AudioStream::~AudioStream()
 	if (_stream != nullptr) {
 		cubeb_stream_destroy(_stream);
 	}
-	CircularBufferFree(_audioBuffer);
 }
 
 void AudioStream::stop(const Napi::CallbackInfo &info)
@@ -320,6 +208,9 @@ void AudioStream::stop(const Napi::CallbackInfo &info)
 		return;
 	}
 	_isStarted = false;
+	if (_isInput) {
+		cubeb_stream_stop(_stream);
+	}
 }
 
 Napi::Value AudioStream::isStarted(const Napi::CallbackInfo &info)
@@ -337,14 +228,6 @@ void AudioStream::start(const Napi::CallbackInfo &info)
 	}
 	_isStarted = true;
 	_ownRef.Ref();
-
-	if (_processFramefn) {
-		_processFramefn.Acquire();
-	} else if (!_processFctRef.IsEmpty()) {
-	 	_processfnMutex.lock();
-		_setProcessFunction(info.Env());
-	 	_processfnMutex.unlock();
-	}
 
 	if (!_stateCallbackfn) {
 		_stateCallbackfn = Napi::ThreadSafeFunction::New(
@@ -382,12 +265,7 @@ void AudioStream::setVolume(const Napi::CallbackInfo &info)
 		throw Napi::Error::New(info.Env(), "volume should be between 0 and 1");
 	}
 
-	// we use a thread here to prevent a deadlock from a mutex waiting for the data_callback to finish and the JS waiting for the setVolume to finish
-	std::thread t([stream, volume]()
-	{
-		cubeb_stream_set_volume(stream, volume);
-	});
-	t.detach();
+	cubeb_stream_set_volume(stream, volume);
 }
 
 Napi::Value AudioStream::getLatency(const Napi::CallbackInfo &info)
@@ -407,7 +285,7 @@ Napi::Value AudioStream::getLatency(const Napi::CallbackInfo &info)
 	if (err != CUBEB_OK) {
 		throw Napi::Error::New(info.Env(), "Error while getting latency");
 	}
-	return Napi::Number::New(info.Env(), latencyInFrames + (CircularBufferGetDataSize(_audioBuffer) / bytesPerFormat(_params.format) / _params.channels));
+	return Napi::Number::New(info.Env(), latencyInFrames);
 }
 
 Napi::Value AudioStream::getPosition(const Napi::CallbackInfo &info)
@@ -426,101 +304,91 @@ Napi::Value AudioStream::getPosition(const Napi::CallbackInfo &info)
 	return Napi::Number::New(info.Env(), positionInFrames);
 }
 
-
-void AudioStream::_setProcessFunction(const Napi::Env &env)
+Napi::Value AudioStream::pushAudioChunk(const Napi::CallbackInfo &info)
 {
-	_processFramefn = Napi::ThreadSafeFunction::New(
-		env,
-		_processFctRef.Value().As<Napi::Function>(),
-		"soundioProcessFrameCallback",
-		0,
-		1,
-		[this](Napi::Env) {
-			// prevent a segfault on exit when the write thread want to access a non-existing threadsafefunction
-			_processFramefn = nullptr;
-	});
-	Napi::Array _channelsData = Napi::Array::New(env, _params.channels);
-	_channelsDataRaw.resize(_params.channels);
-	for (size_t channel = 0; channel < _params.channels; channel++)
-	{
-		Napi::ArrayBuffer buffer = Napi::ArrayBuffer::New(env, _streamFrameSize * bytesPerFormat(_params.format));
-		_channelsDataRaw[channel] = (uint8_t *)buffer.Data();
-
-		if (_params.format == CUBEB_SAMPLE_S16LE || _params.format == CUBEB_SAMPLE_S16BE) {
-			_channelsData[channel] = Napi::TypedArrayOf<uint16_t>::New(env, _streamFrameSize, buffer, 0);
-		} else if (_params.format == CUBEB_SAMPLE_FLOAT32LE || _params.format == CUBEB_SAMPLE_FLOAT32BE) {
-			_channelsData[channel] = Napi::TypedArrayOf<float>::New(env, _streamFrameSize, buffer, 0);
-		}
+	if (_isInput) {
+		throw Napi::Error::New(info.Env(), "This method can only be called on a output stream");
 	}
-	_channelsDataRef = Napi::Reference<Napi::Array>::New(_channelsData, 1);
-	// _processFctRef.Unref();
-}
-
-void AudioStream::setProcessFunction(const Napi::CallbackInfo& info)
-{
-	if (info[0].IsEmpty() || !info[0].IsFunction()) {
-		throw Napi::Error::New(info.Env(), "First argument should be the process function");
+	if (!info[0].IsUndefined() && !info[0].IsNumber()) {
+		throw Napi::Error::New(info.Env(), "First argument should be the timestamp corresponding to the first sample in the buffer");
 	}
- 	_processfnMutex.lock();
-
-	_processFctRef = Napi::Reference<Napi::Value>::New(info[0], 1);
-	if (_isStarted) {
-		_setProcessFunction(info.Env());
+	if (!info[1].IsTypedArray()) {
+		throw Napi::Error::New(info.Env(), "Second argument should be the audio chunk TypedArray");
 	}
 
- 	_processfnMutex.unlock();
-}
-
-Napi::Value AudioStream::_getExternal(const Napi::CallbackInfo& info)
-{
-	// we cannot pass an external between multiple nodejs thread so we use an array buffer to pass the pointer to thr SoundioOutstream instance
-	// this is a big hack but I haven't found any other way of doing that
-	// if thread are being created / deleted it could also lead to a segfault so be careful to call _setProcessFunctionFromExternal directly after calling _getExternal
-	auto wrappedPointer = Napi::ArrayBuffer::New(info.Env(), sizeof(this));
-	AudioStream** dataAddr = reinterpret_cast<AudioStream **>(wrappedPointer.Data());
-	*dataAddr = this;
-	return wrappedPointer;
-}
-
-void AudioStream::_setProcessFunctionFromExternal(const Napi::CallbackInfo& info)
-{
-	if (info.Length() != 2 || !info[0].IsArrayBuffer() || !info[1].IsFunction()) {
-		throw Napi::Error::New(info.Env(), "Two arguments should be passed: External Rtaudio instance and process function");
-	}
-
-	AudioStream *wrap = *static_cast<AudioStream **>(info[0].As<Napi::ArrayBuffer>().Data());
-
- 	wrap->_processfnMutex.lock();
-
-	wrap->_processFctRef = Napi::Reference<Napi::Value>::New(info[1], 1);
-	if (wrap->_isStarted) {
-		wrap->_setProcessFunction(info.Env());
-	}
-
-	wrap->_processfnMutex.unlock();
-}
-
-Napi::Value AudioStream::_getLatencyFromExternal(const Napi::CallbackInfo& info)
-{
-	if (info.Length() != 1 || !info[0].IsArrayBuffer()) {
-		throw Napi::Error::New(info.Env(), "One arguments should be passed: external instance");
-	}
-
-	AudioStream *wrap = *static_cast<AudioStream **>(info[0].As<Napi::ArrayBuffer>().Data());
-	if (wrap->_stream == nullptr) {
-		throw Napi::Error::New(info.Env(), "Stream closed");
-	}
-	uint32_t latencyInFrames;
-	int err;
-
-	if (wrap->_isInput) {
-		err = cubeb_stream_get_input_latency(wrap->_stream, &latencyInFrames);
+	uint64_t timestamp;
+	if (info[0].IsUndefined()) {
+		timestamp = _lastChunkTimestamp;
 	} else {
-		err = cubeb_stream_get_latency(wrap->_stream, &latencyInFrames);
+		timestamp = info[0].As<Napi::Number>().Int64Value();
+	}
+	if (timestamp < _lastChunkTimestamp && _lastChunkTimestamp != 0) {
+		throw Napi::Error::New(info.Env(), "Cannot push audio chunk at a position lower than a previously pushed audio chunk");
 	}
 
-	if (err != CUBEB_OK) {
-		throw Napi::Error::New(info.Env(), "Error while getting latency");
+	Napi::TypedArray chunk = info[1].As<Napi::TypedArray>();
+	if (chunk.TypedArrayType() != format_to_typedarray_type(_params.format)) {
+		throw Napi::Error::New(info.Env(), "TypeArray type is not corresponding to the configured stream format");
 	}
-	return Napi::Number::New(info.Env(), latencyInFrames + (CircularBufferGetDataSize(wrap->_audioBuffer) / bytesPerFormat(wrap->_params.format) / wrap->_params.channels));
+	Napi::ArrayBuffer buffer = chunk.ArrayBuffer();
+
+	int writtenFrames = _audioBuffer.get()->enqueueAudioBuffer(timestamp, (uint8_t *)buffer.Data() + chunk.ByteOffset(), chunk.ElementLength() / _params.channels);
+	_lastChunkTimestamp += writtenFrames;
+
+	return Napi::Number::New(info.Env(), writtenFrames);
 }
+
+Napi::Value AudioStream::readAudioChunk(const Napi::CallbackInfo &info)
+{
+	if (!_isInput) {
+		throw Napi::Error::New(info.Env(), "This method can only be called on an input stream");
+	}
+	if (!info[0].IsUndefined() && !info[0].IsNumber()) {
+		throw Napi::Error::New(info.Env(), "First argument should be the timestamp corresponding to the first sample to read from the buffer");
+	}
+	if (!info[1].IsTypedArray()) {
+		throw Napi::Error::New(info.Env(), "Second argument should be the destination TypedArray");
+	}
+
+	uint64_t timestamp;
+	if (info[0].IsUndefined()) {
+		timestamp = _lastChunkTimestamp;
+	} else {
+		timestamp = info[0].As<Napi::Number>().Int64Value();
+	}
+	if (timestamp < _lastChunkTimestamp && _lastChunkTimestamp != 0) {
+		throw Napi::Error::New(info.Env(), "Cannot push audio chunk at a position lower than a previously pushed audio chunk");
+	}
+
+	Napi::TypedArray chunk = info[1].As<Napi::TypedArray>();
+	if (chunk.TypedArrayType() != format_to_typedarray_type(_params.format)) {
+		throw Napi::Error::New(info.Env(), "TypeArray type is not corresponding to the configured stream format");
+	}
+	Napi::ArrayBuffer buffer = chunk.ArrayBuffer();
+
+	int readFrames = _audioBuffer.get()->dequeueAudioBuffer(timestamp, (uint8_t *)buffer.Data() + chunk.ByteOffset(), chunk.ElementLength() / _params.channels);
+	_lastChunkTimestamp += readFrames;
+
+	return Napi::Number::New(info.Env(), readFrames);
+}
+
+Napi::Value AudioStream::getBufferSize(const Napi::CallbackInfo &info) {
+	int size;
+
+	if (_isInput) {
+		size = _audioBuffer.get()->available_read();
+	} else {
+		size = _audioBuffer.get()->available_write();
+	}
+
+	return Napi::Number::New(info.Env(), size);
+}
+
+Napi::Value AudioStream::getFormat(const Napi::CallbackInfo &info) {
+	return Napi::Number::New(info.Env(), _params.format);
+}
+
+Napi::Value AudioStream::getChannels(const Napi::CallbackInfo &info) {
+	return Napi::Number::New(info.Env(), _params.channels);
+}
+
