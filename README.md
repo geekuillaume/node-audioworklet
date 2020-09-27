@@ -1,8 +1,10 @@
 # Node Audioworklet
 
-Node Audioworklet is a NodeJS lib exposing a set of function to output audio on an audio card. It's close to the AudioWorklet interface of WebAudio. It uses [cubeb](https://github.com/kinetiknz/cubeb) to support a wide variety of OS and configuration ([details](https://github.com/kinetiknz/cubeb/wiki/Backend-Support)). It only handle raw PCM frames that should be set into a Buffer for every frame. You can set the buffer size to precisely time the sound you are emitting.
+Node Audioworklet is a NodeJS lib exposing a set of function to output audio on an audio card. It uses [cubeb](https://github.com/kinetiknz/cubeb) to support a wide variety of OS and configuration ([details](https://github.com/kinetiknz/cubeb/wiki/Backend-Support)). It only handle raw PCM frames that should be set into a Buffer for every frame. A timestamped audio buffer is used to transmit the raw data to the OS audio system, this can be used to precisely time when the audio samples will be outputted.
 
-AudioWorklet also can use another file started in a [NodeJS Worker Thread](https://nodejs.org/api/worker_threads.html) as the process function to isolate the thread and better manage the memory to prevent stop-the-world Garbage Collection from stopping the thread and cause audio artifacts. You need Node v10 or higher to use this feature.
+Look in the `tests/` folder for more informations about the options available in the lib.
+
+This project has been built mainly for [Soundsync](https://soundsync.app).
 
 ## Installation
 
@@ -137,6 +139,9 @@ API: PulseAudio
 const { AudioServer } = require('audioworklet');
 const audioServer = new AudioServer();
 
+const SAMPLE_RATE = 48000;
+const CHANNELS = 2;
+
 const processFrame = (outputChannels) => {
   for (let sample = 0; sample < outputChannels[0].length; sample++) {
     outputChannels[0][sample] = Math.random();
@@ -150,10 +155,19 @@ const processFrame = (outputChannels) => {
   console.log('Opening stream');
   const outputStream = audioServer.initOutputStream(device.id, {
     format: AudioServer.F32LE,
-    sampleRate: 48000,
+    sampleRate: SAMPLE_RATE,
+    channels: CHANNELS,
     name: "test",
-    process: processFrame,
   });
+
+  const buffer = new Float32Array(SAMPLE_RATE * CHANNELS * 5); // 5 seconds buffer
+  for (let sample = 0; sample < buffer.length / CHANNELS; sample++) {
+    // fill with interleaved data
+    outputChannels[sample * CHANNELS] = Math.random();
+    outputChannels[(sample * CHANNELS) + 1] = Math.random();
+  }
+  outputStream.pushAudioChunk(undefined, buffer);
+  // first argument is the chunk timestamp in the audio device clock domain, if undefined, will be contiguous to the last pushed chunk
 
   console.log('Starting stream');
   outputStream.start();
@@ -164,121 +178,6 @@ const processFrame = (outputChannels) => {
   }, 2000);
 })()
 ```
-
-### Use another file as AudioWorklet
-
-```javascript
-const path = require('path');
-const { AudioServer } = require('audioworklet');
-const audioServer = new AudioServer();
-
-(async () => {
-  const device = audioServer.getDefaultOutputDevice();
-  const outputStream = audioServer.initOutputStream(device.id, {
-    format: AudioServer.F32LE,
-  });
-
-  outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/whitenoise.js'));
-  outputStream.start();
-
-  setTimeout(() => {
-    console.log('exiting');
-    process.exit(0);
-  }, 1000);
-})()
-
-```
-
-And in `./workers/whitenoise.js`:
-
-```javascript
-const {AudioWorkletProcessor} = require('../../');
-
-class WhiteNoiseProcessor extends AudioWorkletProcessor {
-  constructor() {
-    super();
-  }
-
-  process(outputChannels) {
-    outputChannels.forEach((channel) => {
-      for (let sample = 0; sample < channel.length; sample++) {
-        channel[sample] = Math.random();
-      }
-    })
-
-    return true;
-  }
-}
-
-module.exports = WhiteNoiseProcessor;
-```
-
-### Communicate with an AudioWorklet
-
-```javascript
-const path = require('path');
-const { AudioServer } = require('audioworklet');
-const audioServer = new AudioServer();
-
-(async () => {
-  const device = audioServer.getDefaultOutputDevice();
-  const outputStream = audioServer.initOutputStream(device.id, {
-    format: AudioServer.F32LE,
-  });
-
-  const worklet = outputStream.attachProcessFunctionFromWorker(path.resolve(__dirname, './workers/messages.js'));
-  outputStream.start();
-
-  setTimeout(() => {
-    console.log('Muting worklet');
-    worklet.postMessage({
-      mute: true,
-    });
-  }, 1000);
-
-  setTimeout(() => {
-    console.log('exiting');
-    process.exit(0);
-  }, 2000);
-})()
-```
-
-And in `workers/messages.js`:
-
-```javascript
-const {AudioWorkletProcessor} = require('audioworklet');
-
-class WhiteNoiseProcessorWithMessage extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    this.mute = false;
-
-    this.port.onmessage = this.handleMessage.bind(this);
-  }
-
-  handleMessage(message) {
-    console.log('Receiving mute status', message.data.mute);
-    this.mute = message.data.mute;
-  }
-
-  process(outputChannels) {
-    if (this.mute) {
-      return true;
-    }
-    outputChannels.forEach((channel) => {
-      for (let sample = 0; sample < channel.length; sample++) {
-        channel[sample] = Math.random();
-      }
-    })
-
-    return true;
-  }
-}
-
-module.exports = WhiteNoiseProcessorWithMessage;
-```
-
-The `this.port` property is a `MessagePort` and also handle passing a second argument `transferList` to prevent a data copy of ArrayBuffers. Look at the [documentation](https://nodejs.org/api/worker_threads.html#worker_threads_port_postmessage_value_transferlist) for more information.
 
 ## Development
 
@@ -309,5 +208,3 @@ git apply ../cmake_rust.patch
 ## Legal
 
 This project is licensed under the MIT license.
-
-It is based on the [Audify](https://github.com/almogh52/audify) project from Almogh52 also released under MIT license.
