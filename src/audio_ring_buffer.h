@@ -98,7 +98,7 @@ public:
     int chunkIndex = 0;
     while (frames > 0 && !empty_internal(increment_index(rd_idx, chunkIndex), wr_idx)) {
       AudioChunk *chunk = &data_.get()[increment_index(rd_idx, chunkIndex)];
-      if (chunk->timestamp + (chunk->frames - chunk->consumed) < timestamp) {
+      if (chunk->timestamp + (chunk->frames - chunk->consumed) <= timestamp) {
         // chunk end timestamp is older than requested timestamp, ignore chunk
         chunkIndex++;
         continue;
