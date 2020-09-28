@@ -14,7 +14,7 @@ if (process.browser) {
 
 	AudioStream.prototype.registerReadHandler = function(handler, options = {}) {
 		const format = this.getFormat();
-		const TypedArrayBuilder = format == 0x0010 || format == 0x0020 ? Int16Array : Float32Array;
+		const TypedArrayBuilder = format === AudioServer.S16LE || format === AudioServer.S16BE ? Int16Array : Float32Array;
 		const channels = this.getChannels();
 
 		const interval = setInterval(() => {

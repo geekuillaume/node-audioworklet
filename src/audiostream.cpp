@@ -119,9 +119,6 @@ AudioStream::AudioStream(
 
 	if (!opts.Get("format").IsNull() && !opts.Get("format").IsUndefined()) {
 		_params.format = (cubeb_sample_format)opts.Get("format").As<Napi::Number>().Int32Value();
-		if (device->format & _params.format == 0) {
-			throw Napi::Error::New(info.Env(), "format not supported");
-		}
 	}
 	if (!opts.Get("sampleRate").IsNull() && !opts.Get("sampleRate").IsUndefined()) {
 		_params.rate = opts.Get("sampleRate").As<Napi::Number>().Uint32Value();
@@ -385,6 +382,7 @@ Napi::Value AudioStream::getBufferSize(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value AudioStream::getFormat(const Napi::CallbackInfo &info) {
+	debug_print("Format: %d\n", _params.format);
 	return Napi::Number::New(info.Env(), _params.format);
 }
 
