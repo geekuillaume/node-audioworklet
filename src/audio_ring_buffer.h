@@ -57,8 +57,9 @@ public:
         assert_correct_thread(producer_id);
     #endif
 
-    assert(buffer);
-    assert(framesCount > 0);
+    if (framesCount == 0 || buffer == NULL) {
+      return 0;
+    }
 
     int rd_idx = read_index_.load(std::memory_order::memory_order_relaxed);
     int wr_idx = write_index_.load(std::memory_order::memory_order_relaxed);
