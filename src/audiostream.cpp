@@ -41,8 +41,10 @@ void AudioStream::Init(Napi::Env &env, Napi::Object exports, ClassRegistry *regi
         InstanceMethod("readAudioChunk", &AudioStream::readAudioChunk),
 
         InstanceMethod("getBufferSize", &AudioStream::getBufferSize),
+        InstanceMethod("getBufferCapacity", &AudioStream::getBufferCapacity),
         InstanceMethod("getFormat", &AudioStream::getFormat),
         InstanceMethod("getChannels", &AudioStream::getChannels),
+        InstanceMethod("getRate", &AudioStream::getRate),
       }, registry);
 
   // Set the class's ctor function as a persistent object to keep it in memory
@@ -151,6 +153,15 @@ AudioStream::AudioStream(
 		_logProcessTime = opts.Get("logProcessTime").As<Napi::Boolean>();
 	}
 
+	if (opts.Get("bufferCapacity").IsNumber()) {
+		_bufferCapacityFrames = opts.Get("bufferCapacity").As<Napi::Number>().Uint32Value();
+		if (_bufferCapacityFrames == 0) {
+			throw Napi::Error::New(info.Env(), "bufferCapacity should be greater than 0");
+		}
+	} else {
+		_bufferCapacityFrames = 10 * _params.rate;
+	}
+
 	if (_isInput) {
 		err = cubeb_stream_init(
 			_cubebContext, // context
@@ -188,7 +199,8 @@ AudioStream::AudioStream(
 		Napi::Error::New(info.Env(), "Error while starting stream").ThrowAsJavaScriptException();;
 	}
 
-	_audioBuffer.reset(new AudioRingBuffer(10 * _params.rate, cubeb_sample_size(_params.format) * _params.channels)); // 10 seconds max buffer
+
+	_audioBuffer.reset(new AudioRingBuffer(_bufferCapacityFrames, cubeb_sample_size(_params.format) * _params.channels)); // 10 seconds max buffer
 }
 
 AudioStream::~AudioStream()
@@ -375,7 +387,10 @@ Napi::Value AudioStream::getBufferSize(const Napi::CallbackInfo &info) {
 	if (_isInput) {
 		size = _audioBuffer.get()->available_read();
 	} else {
-		size = _audioBuffer.get()->available_write();
+		size = _audioBuffer.get()->available_write() - _bufferCapacityFrames;
+	}
+	if (size < 0){
+		size = size * -1;
 	}
 
 	return Napi::Number::New(info.Env(), size);
@@ -388,5 +403,13 @@ Napi::Value AudioStream::getFormat(const Napi::CallbackInfo &info) {
 
 Napi::Value AudioStream::getChannels(const Napi::CallbackInfo &info) {
 	return Napi::Number::New(info.Env(), _params.channels);
+}
+
+Napi::Value AudioStream::getRate(const Napi::CallbackInfo &info) {
+	return Napi::Number::New(info.Env(), _params.rate);
+}
+
+Napi::Value AudioStream::getBufferCapacity(const Napi::CallbackInfo &info) {
+	return Napi::Number::New(info.Env(), _bufferCapacityFrames);
 }
 

@@ -25,9 +25,11 @@ public:
 	Napi::Value pushAudioChunk(const Napi::CallbackInfo &info);
 	Napi::Value readAudioChunk(const Napi::CallbackInfo &info);
 	Napi::Value getBufferSize(const Napi::CallbackInfo &info);
+	Napi::Value getBufferCapacity(const Napi::CallbackInfo &info);
 
 	Napi::Value getFormat(const Napi::CallbackInfo &info);
 	Napi::Value getChannels(const Napi::CallbackInfo &info);
+	Napi::Value getRate(const Napi::CallbackInfo &info);
 
 	friend long data_callback(cubeb_stream *stream, void *user_ptr, void const *input_buffer, void *output_buffer, long nframes);
 	friend void state_callback(cubeb_stream * stm, void * user, cubeb_state state);
@@ -39,6 +41,7 @@ private:
 	cubeb_stream_params _params;
 
 	uint32_t _configuredLatencyFrames;
+	uint32_t _bufferCapacityFrames;
 
 	bool _isStarted;
 	uint64_t _lastChunkTimestamp;

@@ -1,4 +1,5 @@
 const DEFAULT_READ_INTERVAL = 100;
+const DEFAULT_WRITE_INTERVAL = 100;
 
 if (process.browser) {
 	exports = module.exports = {};
@@ -29,6 +30,30 @@ if (process.browser) {
 			this.readAudioChunk(undefined, buffer);
 			handler(buffer);
 		}, options.interval || DEFAULT_READ_INTERVAL);
+	}
+
+	AudioStream.prototype.registerWriteHandler = function(handler, options = {}) {
+		const format = this.getFormat();
+		const rate = this.getRate();
+		const TypedArrayBuilder = format === AudioServer.S16LE || format === AudioServer.S16BE ? Int16Array : Float32Array;
+		const channels = this.getChannels();
+
+		const targetBufferSize = options.targetBufferSize || rate * 0.5; // 500 ms
+		const buffer = new TypedArrayBuilder((options.iterationBufferSize || targetBufferSize / 10) * channels);
+
+		const interval = setInterval(() => {
+			if (!this.isStarted()) {
+				clearInterval(interval);
+			}
+			while (this.getBufferSize() < targetBufferSize) {
+				const result = handler(buffer);
+				if (!result && result !== undefined) {
+					this.stop();
+					return;
+				}
+				this.pushAudioChunk(undefined, buffer);
+			}
+		}, options.interval || DEFAULT_WRITE_INTERVAL);
 	}
 
 	exports = module.exports = {

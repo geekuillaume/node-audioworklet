@@ -39,6 +39,9 @@ interface StreamParams {
 	/** prevent device switch by OS on disconnect */
 	disableSwitching?: boolean;
 
+	/** Capacity of the input or output buffer in number of frames, for a output stream: how long in the future you can queue audio buffer, for input stream: how long you can wait until pulling new samples */
+	bufferCapacity?: number;
+
 	logProcessTime?: boolean;
 }
 
@@ -83,6 +86,15 @@ export declare class AudioDevice {
 	}
 }
 
+interface WriteHandlerOptions {
+	/** How often to check the state of the buffer in ms  */
+	interval?: number;
+	/** Minimum number of frames to target for the buffer size  */
+	targetBufferSize?: number;
+	/** Number of frames reserved in the buffer passed as the argument to the handler */
+	iterationBufferSize?: number;
+}
+
 export declare class AudioStream {
 	start(): void;
 	stop(): void;
@@ -98,12 +110,16 @@ export declare class AudioStream {
 	/** Returns the number of read frames, could be lower than the destination size if the buffer is empty */
 	readAudioChunk(timestamp?: number, destination: TypedArray): number;
 
-	/** For an input stream returns the number of frames available to read, for an output stream returns the available size to write in frames in the buffer */
+	/** For an input stream returns the number of frames available to read, for an output stream returns the number of frames in the buffer */
 	getBufferSize(): number;
+	/** Returns the number of frames in the buffer waiting to be pulled by the OS sound system*/
+	getBufferCapacity(): number;
 	getFormat(): AudioFormat;
 	getChannels(): number;
+	getRate(): number;
 
 	registerReadHandler(readHandler: (audioChunk: TypedArray) => void, options?: {interval: number}): void;
+	registerWriteHandler(readHandler: (audioChunk: TypedArray) => void | boolean, options?: WriteHandlerOptions): void;
 
 	configuredLatencyFrames: number;
 }
