@@ -22,7 +22,6 @@ jobs:
           git submodule update --init --recursive
           git clone https://github.com/djg/cubeb-pulse-rs.git vendor/cubeb/src/cubeb-pulse-rs
           git clone https://github.com/ChunMinChang/cubeb-coreaudio-rs vendor/cubeb/src/cubeb-coreaudio-rs
-          cd vendor/cubeb
 
       - uses: hecrj/setup-rust-action@v1
       - name: Install Node.js, NPM and Yarn
@@ -72,7 +71,6 @@ jobs:
         git submodule update --init --recursive
         git clone https://github.com/djg/cubeb-pulse-rs.git vendor/cubeb/src/cubeb-pulse-rs
         git clone https://github.com/ChunMinChang/cubeb-coreaudio-rs vendor/cubeb/src/cubeb-coreaudio-rs
-        cd vendor/cubeb
 
     - name: Build for armv7
       run: ./scripts/build_for_arch.sh --no-upload
@@ -89,7 +87,6 @@ jobs:
         git submodule update --init --recursive
         git clone https://github.com/djg/cubeb-pulse-rs.git vendor/cubeb/src/cubeb-pulse-rs
         git clone https://github.com/ChunMinChang/cubeb-coreaudio-rs vendor/cubeb/src/cubeb-coreaudio-rs
-        cd vendor/cubeb
 
     - name: Build for arm64v8
       env:
