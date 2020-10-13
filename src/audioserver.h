@@ -36,7 +36,7 @@ public:
 	cubeb	*_cubeb;
 
 private:
-	inline static Napi::FunctionReference constructor;
+	static Napi::FunctionReference constructor;
 	Napi::ThreadSafeFunction _deviceChangeHandler;
 	ClassRegistry *registry;
 };

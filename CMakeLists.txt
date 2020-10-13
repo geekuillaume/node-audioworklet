@@ -38,8 +38,8 @@ set(BUILD_SHARED_LIBS ON CACHE BOOL "test")
 add_subdirectory(vendor/cubeb cubeb)
 include_directories(vendor/cubeb)
 
-# Set C++17 standard
-set (CMAKE_CXX_STANDARD 17)
+# Set C++14 standard
+set (CMAKE_CXX_STANDARD 14)
 
 # Get all the cpp files for audioworklet
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c" "src/*.h")
