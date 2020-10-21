@@ -76,6 +76,13 @@ jobs:
           Remove-Item Env:\NPM_CONFIG_PREFIX
           yarn build-and-upload
 
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: audioworklet-${{ runner.os }}
+          path: build/Release
+
+
   prebuild-lib-armv7:
     name: Prebuild lib ARMv7
     runs-on: ubuntu-latest
