@@ -58,6 +58,11 @@ jobs:
           Remove-Item Env:\NPM_CONFIG_PREFIX
           yarn build-binaries
 
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: audioworklet-${{ runner.os }}
+          path: build/Release
 
   prebuild-lib-armv7:
     name: Prebuild lib ARMv7
@@ -92,3 +97,14 @@ jobs:
       env:
         CROSS_ENV: arm64v8
       run: ./scripts/build_for_arch.sh --no-upload
+
+  remove-old-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Remove old artifacts
+      uses: c-hive/gha-remove-artifacts@v1
+      with:
+        age: '1 month'
+        skip-recent: 10
