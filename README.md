@@ -142,14 +142,6 @@ const audioServer = new AudioServer();
 const SAMPLE_RATE = 48000;
 const CHANNELS = 2;
 
-const processFrame = (outputChannels) => {
-  for (let sample = 0; sample < outputChannels[0].length; sample++) {
-    outputChannels[0][sample] = Math.random();
-    outputChannels[1][sample] = Math.random();
-  }
-
-  return true; // returning false will stop the stream
-}
 (async () => {
   const device = audioServer.getDefaultOutputDevice();
   console.log('Opening stream');
@@ -163,8 +155,8 @@ const processFrame = (outputChannels) => {
   const buffer = new Float32Array(SAMPLE_RATE * CHANNELS * 5); // 5 seconds buffer
   for (let sample = 0; sample < buffer.length / CHANNELS; sample++) {
     // fill with interleaved data
-    outputChannels[sample * CHANNELS] = Math.random();
-    outputChannels[(sample * CHANNELS) + 1] = Math.random();
+    buffer[sample * CHANNELS] = Math.random();
+    buffer[(sample * CHANNELS) + 1] = Math.random();
   }
   outputStream.pushAudioChunk(undefined, buffer);
   // first argument is the chunk timestamp in the audio device clock domain, if undefined, will be contiguous to the last pushed chunk
