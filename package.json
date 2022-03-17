@@ -40,7 +40,7 @@
 		"np": "^5.2.1",
 		"prebuild": "^9.1.1",
 		"run-script-os": "^1.0.7",
-		"simple-git": "^1.129.0",
+		"simple-git": "^3.3.0",
 		"typedoc": "^0.17.4",
 		"typescript": "^3.8.3"
 	},
